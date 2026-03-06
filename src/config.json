@@ -1,0 +1,178 @@
+{
+	"personal": {
+		"name": "KMohZaid",
+		"role": "Backend Developer",
+		"tagline": "A passionate developer specializing in backend systems, open source contributions, and building tools that make developers' lives easier.",
+		"location": "Earth",
+		"availability": true,
+		"github_username": "KMohZaid",
+		"avatar": "/images/profile/avatar.png",
+		"resume_url": "none",
+		"typewriter_texts": [
+			"Contributing to open source",
+			"Crafting elegant APIs",
+			"Building scalable backend systems",
+			"Learning new things everyday"
+		]
+	},
+
+	"social": {
+		"github": "https://github.com/KMohZaid/",
+		"twitter": "https://x.com/KMohZaid",
+		"linkedin": "https://www.linkedin.com/in/kmohzaid/",
+		"buymeacoffee": "https://buymeacoffee.com/kmohzaid",
+		"telegram": "https://t.me/SaudagarAli",
+		"email": "none"
+	},
+
+	"site": {
+		"title": "KMohZaid | Backend Developer & Open Source Contributor",
+		"description": "Backend developer specializing in distributed systems, microservices, and open source contributions.",
+		"url": "https://kmohzaid.dev",
+		"keywords": [
+			"backend developer",
+			"open source",
+			"golang",
+			"nodejs",
+			"distributed systems"
+		],
+		"repo_url": "https://github.com/KMohZaid/portfolio",
+		"built_with": "Next.js, Tailwind CSS & ✨ Framer Motion"
+	},
+
+	"skills": {
+		"mastering": [
+			{
+				"name": "Python",
+				"icon": "python",
+				"description": "I started learning Python in 2021 specifically to create a Userbot on Telegram, adding custom features as I learned. Now it's my go-to language for scripting, automation, and backend APIs."
+			},
+			{
+				"name": "JavaScript",
+				"icon": "javascript",
+				"description": "I learned JavaScript alongside HTML/CSS specifically for building React applications, as I never enjoyed building websites without it. Now it's a constant companion for full-stack development."
+			},
+			{
+				"name": "Node.js",
+				"icon": "nodejs",
+				"description": "My favorite backend environment. I'm good at it, and it provides me with the JavaScript execution I need. I've built many applications with it, and my experience so far has been solid."
+			},
+			{
+				"name": "SQL Databases",
+				"icon": "postgresql",
+				"description": "PostgreSQL is my life-saver for speed and performance. I learned Oracle DB concepts during my diploma, though I don't use it much now. I've used various clients like MySQL Workbench, DBeaver, and PHPMyAdmin to manage databases efficiently."
+			},
+			{
+				"name": "MongoDB",
+				"icon": "mongodb",
+				"description": "Very useful back when I was building userbots and my SQL knowledge wasn't solid. I still use it when I need a free tier for hosting a database online quickly."
+			},
+			{
+				"name": "Git",
+				"icon": "git",
+				"description": "Started as a skill I found on YouTube, and now I love it. Creating branches, organizing commits, rolling back changes, and seeing exactly what changed when is essential to my workflow."
+			},
+			{
+				"name": "Linux",
+				"icon": "linux",
+				"description": "I always wanted to switch but was too comfortable with Windows. When I planned to buy a new laptop, I decided to switch, but my motivation peaked early—I backed up my data to an external drive, wiped Windows, and installed Linux daily. Now, I never feel like going back."
+			},
+			{
+				"name": "Bash",
+				"icon": "bash",
+				"description": "The best terminal shell. I use it for writing deploy scripts, CI pipelines, and system tooling."
+			},
+			{
+				"name": "Docker",
+				"icon": "docker",
+				"description": "Helps me deploy my applications easily. I'm good at containerizing everything for consistent environments."
+			},
+			{
+				"name": "RESTful APIs",
+				"icon": "restapi",
+				"description": "Building and consuming APIs is second nature. I'm comfortable with standard methods, handling responses, and integrating services."
+			}
+		],
+		"learned_for_now": [
+			{
+				"name": "React",
+				"icon": "react",
+				"description": "I know the basics and can build apps, but I haven't mastered it yet."
+			},
+			{
+				"name": "TypeScript",
+				"icon": "typescript",
+				"description": "Provides the types I want to prevent future errors. It's good for developer experience and safer code."
+			},
+			{
+				"name": "Next.js",
+				"icon": "nextjs",
+				"description": "I can use it, but I'm not fully proficient in all its advanced features."
+			},
+			{
+				"name": "Java",
+				"icon": "java",
+				"description": "I learned Java, so I know it. Used mainly for Android development."
+			},
+			{
+				"name": "Android Dev",
+				"icon": "android",
+				"description": "I know Android Studio and have built applications with it."
+			},
+			{
+				"name": "Telegram Bots",
+				"icon": "telegram",
+				"description": "I build Telegram bots, a skill I've honed since starting my coding journey with userbots."
+			}
+		],
+		"working_in_progress": [
+			{
+				"name": "Data Science & ML",
+				"icon": "datascience",
+				"description": "Currently expanding my knowledge in AI, ML, and Data Science fields."
+			},
+			{
+				"name": "CyberSecurity",
+				"icon": "cybersecurity",
+				"description": "Currently learning offensive security concepts and participating in CTF competitions."
+			},
+			{
+				"name": "Go",
+				"icon": "go",
+				"description": "Trying to learn Go because of its high performance in the backend. It's extremely popular among developers right now, and I've learned the very basics."
+			},
+			{
+				"name": "DevOps",
+				"icon": "devops",
+				"description": "Since I already know Docker, I consider myself learning DevOps. I want to expand into other tools and methodologies."
+			},
+			{
+				"name": "Nginx",
+				"icon": "nginx",
+				"description": "Learning it to set up reverse proxies, map custom ports to my Docker containers, and hide my actual server IP behind a proxy or merge servers under one domain."
+			}
+		],
+		"on_my_radar": [
+			{
+				"name": "Rust",
+				"icon": "rust",
+				"description": "Planning to learn it because it's cool, fast, and speeds up tooling."
+			},
+			{
+				"name": "AWS",
+				"icon": "aws",
+				"description": "Cloud infrastructure is popular and essential. I plan to learn the core services hands-on."
+			},
+			{
+				"name": "GraphQL",
+				"icon": "graphql",
+				"description": "Planning to learn it because it's cool I heard."
+			},
+			{
+				"name": "Redis",
+				"icon": "redis",
+				"description": "Planning to learn it properly to speed up my applications with caching."
+			}
+		]
+	}
+}
