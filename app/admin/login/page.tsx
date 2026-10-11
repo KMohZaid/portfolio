@@ -8,7 +8,7 @@ import { Suspense, useState } from "react";
 function LoginForm() {
   const query = useSearchParams();
   const router = useRouter();
-  const [email, setEmail] = useState(query.get("email") ?? "");
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -30,7 +30,7 @@ function LoginForm() {
       if (verifying) router.push("/admin");
       else {
         setMessage(result.message);
-        window.history.replaceState(null, "", `/admin/login?email=${encodeURIComponent(email)}`);
+        window.history.replaceState(null, "", "/admin/login");
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to request sign-in.");
