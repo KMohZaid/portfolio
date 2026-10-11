@@ -1,4 +1,4 @@
-import { getSupabase } from "./db";
+import { query } from "./db";
 import type { BlogUpload } from "./types";
 
 export const MAX_UPLOAD_BYTES = 4_700_000;
@@ -17,26 +17,16 @@ function serialize(upload: UploadRow): BlogUpload {
 }
 
 export async function listUploads(): Promise<BlogUpload[]> {
-  const { data, error } = await getSupabase().from("blog_uploads").select("id,url,filename,size,created_at,removed_at").order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data as UploadRow[]).map(serialize);
+  const { rows } = await query<UploadRow>("SELECT id,url,filename,size,created_at,removed_at FROM blog_uploads ORDER BY created_at DESC");
+  return rows.map(serialize);
 }
 
 export async function addUpload(upload: Omit<BlogUpload, "_id">) {
-  const { data, error } = await getSupabase().from("blog_uploads").insert({
-    url: upload.url,
-    filename: upload.filename,
-    size: upload.size,
-    created_at: upload.createdAt,
-    removed_at: upload.removedAt ?? null,
-  }).select("id,url,filename,size,created_at,removed_at").single();
-  if (error) throw error;
-  return serialize(data as UploadRow);
+  const { rows } = await query<UploadRow>("INSERT INTO blog_uploads(url,filename,size,created_at,removed_at) VALUES($1,$2,$3,$4,$5) RETURNING id,url,filename,size,created_at,removed_at", [upload.url, upload.filename, upload.size, upload.createdAt, upload.removedAt ?? null]);
+  return serialize(rows[0]);
 }
 
 export async function markUploadRemoved(id: string) {
-  const { data, error } = await getSupabase().from("blog_uploads").update({ removed_at: new Date().toISOString() })
-    .eq("id", id).is("removed_at", null).select("id").maybeSingle();
-  if (error) throw error;
-  return Boolean(data);
+  const { rowCount } = await query("UPDATE blog_uploads SET removed_at=now() WHERE id=$1 AND removed_at IS NULL", [id]);
+  return Boolean(rowCount);
 }

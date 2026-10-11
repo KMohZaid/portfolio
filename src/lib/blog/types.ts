@@ -7,6 +7,7 @@ export type BlogPost = {
   excerpt: string;
   content: JSONContent;
   status: "draft" | "published";
+  visibility: "public" | "hidden";
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
