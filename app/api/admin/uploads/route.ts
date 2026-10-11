@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const url = `https://telegra.ph${path}`;
     const upload = await addUpload({ url, filename: image.name.slice(0, 200), size: image.size, createdAt: new Date().toISOString() });
     return NextResponse.json({ upload }, { status: 201 });
-  } catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to upload image. Check MongoDB and try again." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
+  } catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to upload image. Check the Supabase configuration and try again." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }
 
 export async function DELETE(request: Request) {

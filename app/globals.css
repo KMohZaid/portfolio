@@ -259,9 +259,21 @@
   .ProseMirror blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
   .ProseMirror pre { @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm; }
   .ProseMirror img { @apply max-h-96 rounded-lg; }
-  .notion-editor .ProseMirror { @apply mx-auto max-w-2xl font-sans; }
-  .notion-editor .ProseMirror p { @apply my-3 leading-8; }
-  .notion-editor .ProseMirror h1, .notion-editor .ProseMirror h2 { @apply mt-8; }
+  .dm-editor { @apply min-h-80 rounded-b-xl border-0 bg-card text-foreground; --dm-color-text: hsl(var(--foreground)); --dm-color-surface: hsl(var(--card)); --dm-color-border: hsl(var(--border)); --dm-color-primary: hsl(var(--primary)); }
+  .dm-editor :where(.dm-toolbar, .dm-bubble-menu, .dm-floating-menu, .dm-block-handle, .dm-block-context-menu) { @apply border-border bg-card text-foreground; }
+  .dm-editor [contenteditable="true"] { @apply min-h-64 px-5 py-4 text-foreground outline-none; }
+  .dm-editor [contenteditable="true"] > * + * { @apply mt-4; }
+  .dm-editor [contenteditable="true"] h1, .dm-editor [contenteditable="true"] h2, .dm-editor [contenteditable="true"] h3 { @apply font-mono font-bold; }
+  .dm-editor [contenteditable="true"] h1 { @apply text-3xl; }
+  .dm-editor [contenteditable="true"] h2 { @apply text-2xl; }
+  .dm-editor [contenteditable="true"] ul { @apply ml-6 list-disc; }
+  .dm-editor [contenteditable="true"] ol { @apply ml-6 list-decimal; }
+  .dm-editor [contenteditable="true"] blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
+  .dm-editor [contenteditable="true"] pre { @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm; }
+  .dm-editor [contenteditable="true"] img { @apply max-h-96 rounded-lg; }
+  .dm-editor.dm-notion-mode [contenteditable="true"] { @apply mx-auto max-w-2xl font-sans; }
+  .dm-editor.dm-notion-mode [contenteditable="true"] p { @apply my-3 leading-8; }
+  .dm-editor.dm-notion-mode [contenteditable="true"] h1, .dm-editor.dm-notion-mode [contenteditable="true"] h2 { @apply mt-8; }
 
   .prose-custom h1 {
     @apply text-3xl md:text-4xl font-mono font-bold text-foreground mt-8 mb-4;

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { JSONContent } from "@tiptap/react";
+import type { JSONContent } from "@domternal/core";
 import { requireAdmin } from "@/lib/blog/auth";
 import { listPosts, savePost, slugInUse } from "@/lib/blog/posts";
 import { postSchema } from "@/lib/blog/validation";

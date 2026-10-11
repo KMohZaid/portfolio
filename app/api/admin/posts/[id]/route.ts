@@ -1,9 +1,7 @@
-import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
-import type { JSONContent } from "@tiptap/react";
+import type { JSONContent } from "@domternal/core";
 import { requireAdmin } from "@/lib/blog/auth";
-import { getDb } from "@/lib/blog/db";
-import { deletePost, savePost, slugInUse } from "@/lib/blog/posts";
+import { deletePost, getPostById, savePost, slugInUse } from "@/lib/blog/posts";
 import { postSchema } from "@/lib/blog/validation";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -12,11 +10,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const parsed = postSchema.safeParse(await request.json());
     if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid post" }, { status: 400 });
-    const old = ObjectId.isValid(id) ? await (await getDb()).collection("blog_posts").findOne({ _id: new ObjectId(id) }) : null;
+    const old = /^[0-9a-f-]{36}$/i.test(id) ? await getPostById(id) : null;
     if (!old) return NextResponse.json({ error: "Post not found" }, { status: 404 });
     if (await slugInUse(parsed.data.slug, id)) return NextResponse.json({ error: "That slug is already in use." }, { status: 409 });
     const now = new Date().toISOString();
-    const post = await savePost({ ...parsed.data, content: parsed.data.content as JSONContent, createdAt: new Date(old.createdAt).toISOString(), updatedAt: now, publishedAt: parsed.data.status === "published" ? old.publishedAt ? new Date(old.publishedAt).toISOString() : now : undefined }, id);
+    const post = await savePost({ ...parsed.data, content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.status === "published" ? old.publishedAt ?? now : undefined }, id);
     return NextResponse.json({ post });
   } catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to update post." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }

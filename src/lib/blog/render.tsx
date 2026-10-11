@@ -1,4 +1,4 @@
-import type { JSONContent } from "@tiptap/react";
+import type { JSONContent } from "@domternal/core";
 
 function safeHref(value: unknown) {
   if (typeof value !== "string") return undefined;

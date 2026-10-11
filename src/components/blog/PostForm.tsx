@@ -5,7 +5,7 @@ import { useState } from "react";
 import { BlogEditor } from "./Editor";
 import { slugify } from "@/lib/blog/slug";
 import type { BlogPost } from "@/lib/blog/types";
-import type { JSONContent } from "@tiptap/react";
+import type { JSONContent } from "@domternal/core";
 
 const emptyContent: JSONContent = { type: "doc", content: [{ type: "paragraph" }] };
 

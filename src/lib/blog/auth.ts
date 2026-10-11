@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import { getDb } from "./db";
+import { getSupabase } from "./db";
 
 const COOKIE = "portfolio_admin";
 const MAX_AGE = 60 * 60 * 24 * 7;
@@ -11,24 +11,41 @@ const secret = () => {
   return new TextEncoder().encode(value);
 };
 
+async function tokenHash(value: string) {
+  const pepper = process.env.AUTH_SECRET;
+  if (!pepper || pepper.length < 32) throw new Error("Set AUTH_SECRET to a random value of at least 32 characters.");
+  return createHash("sha256").update(pepper).update(":").update(value).digest("hex");
+}
+
 export function allowedEmails(): string[] {
   return (process.env.ADMIN_EMAILS ?? "").split(",").map((email) => email.trim().toLowerCase()).filter(Boolean);
 }
 
-export async function createLoginToken(email: string) {
-  const jti = randomUUID();
-  await (await getDb()).collection("blog_login_tokens").insertOne({ jti, email, expiresAt: new Date(Date.now() + 10 * 60_000) });
-  return new SignJWT({ email, purpose: "login" }).setProtectedHeader({ alg: "HS256" }).setJti(jti).setIssuedAt().setExpirationTime("10m").sign(secret());
+export async function createLoginToken(email: string, code: string) {
+  const { error } = await getSupabase().from("blog_login_tokens").insert({
+    jti: randomUUID(),
+    email,
+    code_hash: await tokenHash(code),
+    expires_at: new Date(Date.now() + 5 * 60_000).toISOString(),
+  });
+  if (error) throw error;
 }
 
-export async function consumeLoginToken(jti: string, email: string) {
-  const result = await (await getDb()).collection("blog_login_tokens").deleteOne({ jti, email, expiresAt: { $gt: new Date() } });
-  return result.deletedCount === 1;
+export async function consumeLoginToken(email: string, code: string) {
+  const { data, error } = await getSupabase().rpc("consume_blog_login_code", {
+    p_email: email,
+    p_code_hash: await tokenHash(code),
+    p_now: new Date().toISOString(),
+  });
+  if (error) throw error;
+  return data;
 }
 
 export async function createSession(email: string) {
   const jti = randomUUID();
-  await (await getDb()).collection("blog_admin_sessions").insertOne({ jti, email, expiresAt: new Date(Date.now() + MAX_AGE * 1000) });
+  const expiresAt = new Date(Date.now() + MAX_AGE * 1000).toISOString();
+  const { error } = await getSupabase().from("blog_admin_sessions").insert({ jti, email, expires_at: expiresAt });
+  if (error) throw error;
   const token = await new SignJWT({ email, purpose: "session" }).setProtectedHeader({ alg: "HS256" }).setJti(jti).setIssuedAt().setExpirationTime(`${MAX_AGE}s`).sign(secret());
   const store = await cookies();
   store.set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", maxAge: MAX_AGE });
@@ -41,8 +58,10 @@ export async function getAdminEmail(): Promise<string | null> {
     const { payload } = await jwtVerify(token, secret());
     const email = typeof payload.email === "string" ? payload.email.toLowerCase() : "";
     if (payload.purpose !== "session" || typeof payload.jti !== "string" || !allowedEmails().includes(email)) return null;
-    const session = await (await getDb()).collection("blog_admin_sessions").findOne({ jti: payload.jti, email, expiresAt: { $gt: new Date() } }, { projection: { _id: 1 } });
-    return session ? email : null;
+    const { data, error } = await getSupabase().from("blog_admin_sessions").select("jti")
+      .eq("jti", payload.jti).eq("email", email).gt("expires_at", new Date().toISOString()).maybeSingle();
+    if (error) return null;
+    return data ? email : null;
   } catch { return null; }
 }
 
@@ -56,7 +75,13 @@ export async function clearSession() {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
   if (token) {
-    try { const { payload } = await jwtVerify(token, secret()); if (typeof payload.jti === "string") await (await getDb()).collection("blog_admin_sessions").deleteOne({ jti: payload.jti }); } catch { /* always clear even if the session record has expired */ }
+    try {
+      const { payload } = await jwtVerify(token, secret());
+      if (typeof payload.jti === "string") {
+        const { error } = await getSupabase().from("blog_admin_sessions").delete().eq("jti", payload.jti);
+        if (error) throw error;
+      }
+    } catch { /* always clear even if the session record has expired */ }
   }
   store.delete(COOKIE);
 }
