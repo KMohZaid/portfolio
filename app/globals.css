@@ -232,6 +232,37 @@
     @apply text-foreground/90;
   }
 
+  .blog-prose { @apply text-foreground/90 leading-8; }
+  .blog-prose > * + * { @apply mt-5; }
+  .blog-prose h1 { @apply mt-10 font-mono text-3xl font-bold text-foreground; }
+  .blog-prose h2 { @apply mt-8 font-mono text-2xl font-bold text-foreground; }
+  .blog-prose h3 { @apply mt-7 font-mono text-xl font-semibold text-foreground; }
+  .blog-prose p { @apply leading-8; }
+  .blog-prose ul { @apply ml-6 list-disc space-y-2; }
+  .blog-prose ol { @apply ml-6 list-decimal space-y-2; }
+  .blog-prose li { @apply pl-1; }
+  .blog-prose blockquote { @apply border-l-2 border-primary/50 pl-5 italic text-muted-foreground; }
+  .blog-prose pre { @apply overflow-x-auto rounded-xl border border-border bg-card p-4 font-mono text-sm; }
+  .blog-prose code { @apply rounded bg-muted px-1.5 py-0.5 font-mono text-sm; }
+  .blog-prose pre code { @apply bg-transparent p-0; }
+  .blog-prose a { @apply text-primary underline underline-offset-4; }
+  .blog-prose img { @apply mx-auto max-h-[38rem] rounded-xl object-contain; }
+  .blog-prose figure { @apply my-8; }
+  .blog-prose figcaption { @apply mt-2 text-center text-sm text-muted-foreground; }
+  .blog-prose hr { @apply border-border; }
+  .ProseMirror { @apply min-h-64 outline-none; }
+  .ProseMirror > * + * { @apply mt-4; }
+  .ProseMirror h1 { @apply font-mono text-3xl font-bold; }
+  .ProseMirror h2 { @apply font-mono text-2xl font-bold; }
+  .ProseMirror ul { @apply ml-6 list-disc; }
+  .ProseMirror ol { @apply ml-6 list-decimal; }
+  .ProseMirror blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
+  .ProseMirror pre { @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm; }
+  .ProseMirror img { @apply max-h-96 rounded-lg; }
+  .notion-editor .ProseMirror { @apply mx-auto max-w-2xl font-sans; }
+  .notion-editor .ProseMirror p { @apply my-3 leading-8; }
+  .notion-editor .ProseMirror h1, .notion-editor .ProseMirror h2 { @apply mt-8; }
+
   .prose-custom h1 {
     @apply text-3xl md:text-4xl font-mono font-bold text-foreground mt-8 mb-4;
   }

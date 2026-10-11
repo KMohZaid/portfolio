@@ -1,0 +1,21 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ArrowLeft, ExternalLink, FilePlus2, Pencil, Trash2 } from "lucide-react";
+import { getAdminEmail } from "@/lib/blog/auth";
+import { listPosts } from "@/lib/blog/posts";
+import { UploadManager } from "@/components/blog/UploadManager";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const email = await getAdminEmail();
+  if (!email) redirect("/admin/login");
+  let posts = [];
+  let error = "";
+  try { posts = await listPosts(true); } catch (e) { error = e instanceof Error ? e.message : "Unable to load posts."; }
+  return <main className="min-h-screen bg-background px-6 pb-20 pt-10 text-foreground"><div className="mx-auto max-w-5xl"><Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><ArrowLeft size={16} /> Portfolio</Link><div className="mt-8 flex flex-wrap items-end justify-between gap-4"><div><p className="font-mono text-sm text-primary">admin · {email}</p><h1 className="mt-2 font-mono text-4xl font-bold">Writing dashboard</h1><p className="mt-2 text-muted-foreground">Manage drafts, published posts, and your upload index.</p></div><div className="flex gap-3"><Link href="/blog" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:border-primary"><ExternalLink size={16} /> View blog</Link><Link href="/admin/new" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><FilePlus2 size={16} /> New post</Link></div></div><form action="/api/auth/logout" method="post" className="mt-4"><button className="text-sm text-muted-foreground hover:text-foreground">Sign out</button></form><section className="mt-10 overflow-hidden rounded-xl border border-border bg-card"><div className="border-b border-border px-5 py-4"><h2 className="font-mono text-lg font-semibold">Posts <span className="text-sm text-muted-foreground">({posts.length})</span></h2></div>{error ? <p className="p-5 text-sm text-destructive">{error}</p> : posts.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">No posts yet. Create a draft or publish your first post.</div> : <div className="divide-y divide-border">{posts.map((post) => <div key={post._id} className="flex flex-wrap items-center gap-4 px-5 py-4"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className="truncate font-medium">{post.title}</h3><span className={`rounded-full px-2 py-0.5 text-xs ${post.status === "published" ? "bg-terminal-green/15 text-terminal-green" : "bg-muted text-muted-foreground"}`}>{post.status}</span></div><p className="mt-1 truncate font-mono text-xs text-muted-foreground">/blog/{post.slug} · updated {new Date(post.updatedAt).toLocaleDateString()}</p></div>{post.status === "published" && <Link href={`/blog/${post.slug}`} aria-label="View post" className="rounded p-2 text-muted-foreground hover:text-primary"><ExternalLink size={17} /></Link>}<Link href={`/admin/edit/${post._id}`} aria-label="Edit post" className="rounded p-2 text-muted-foreground hover:text-primary"><Pencil size={17} /></Link><DeletePost id={post._id!} /></div>)}</div>}</section><div className="mt-8"><UploadManager /></div></div></main>;
+}
+
+function DeletePost({ id }: { id: string }) {
+  return <form action={`/api/admin/posts/${id}`} method="post" onSubmit={(event) => { event.preventDefault(); if (!window.confirm("Permanently delete this post?")) return; void fetch(`/api/admin/posts/${id}`, { method: "DELETE" }).then(() => window.location.reload()); }}><button aria-label="Delete post" className="rounded p-2 text-muted-foreground hover:text-destructive"><Trash2 size={17} /></button></form>;
+}
