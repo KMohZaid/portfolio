@@ -15,4 +15,5 @@ export const postSchema = z.object({
   excerpt: z.string().trim().max(500).default(""),
   content: z.object({ type: z.literal("doc"), content: z.array(contentNodeSchema).max(5000) }).passthrough(),
   status: z.enum(["draft", "published"]),
+  visibility: z.enum(["public", "hidden"]).default("public"),
 });

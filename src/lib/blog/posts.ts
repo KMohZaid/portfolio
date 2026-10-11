@@ -1,4 +1,4 @@
-import { getSupabase } from "./db";
+import { isDatabaseConfigured, query } from "./db";
 import { samplePosts } from "./sample-posts";
 import type { BlogPost } from "./types";
 import type { z } from "zod";
@@ -12,10 +12,15 @@ type PostRow = {
   excerpt: string;
   content: BlogPost["content"];
   status: BlogPost["status"];
-  created_at: string;
-  updated_at: string;
-  published_at: string | null;
+  visibility: BlogPost["visibility"];
+  created_at: Date | string;
+  updated_at: Date | string;
+  published_at: Date | string | null;
 };
+
+function iso(value: Date | string | null) {
+  return value instanceof Date ? value.toISOString() : value ?? undefined;
+}
 
 function serialize(post: PostRow): BlogPost {
   return {
@@ -25,78 +30,58 @@ function serialize(post: PostRow): BlogPost {
     excerpt: post.excerpt,
     content: post.content,
     status: post.status,
-    createdAt: post.created_at,
-    updatedAt: post.updated_at,
-    publishedAt: post.published_at ?? undefined,
+    visibility: post.visibility,
+    createdAt: iso(post.created_at)!,
+    updatedAt: iso(post.updated_at)!,
+    publishedAt: iso(post.published_at),
   };
 }
 
-const columns = "id,title,slug,excerpt,content,status,created_at,updated_at,published_at";
+const columns = "id,title,slug,excerpt,content,status,visibility,created_at,updated_at,published_at";
+const isSampleId = (id: string) => id.startsWith("sample-");
 
 export async function listPosts(includeDrafts = false): Promise<BlogPost[]> {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return samplePosts.filter((post) => includeDrafts || post.status === "published");
-  }
-  const query = getSupabase().from("blog_posts").select(columns);
-  const { data, error } = await (includeDrafts ? query : query.eq("status", "published"))
-    .order("published_at", { ascending: false, nullsFirst: false })
-    .order("updated_at", { ascending: false });
-  if (error) throw error;
-  const posts = (data as PostRow[]).map(serialize);
-  return posts.length ? posts : samplePosts.filter((post) => includeDrafts || post.status === "published");
+  if (!isDatabaseConfigured()) return samplePosts.filter((post) => includeDrafts || (post.status === "published" && post.visibility === "public"));
+  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts ${includeDrafts ? "" : "WHERE status = 'published' AND visibility = 'public'"} ORDER BY published_at DESC NULLS LAST, updated_at DESC`);
+  return rows.map(serialize);
 }
 
 export async function getPostBySlug(slug: string, includeDraft = false): Promise<BlogPost | null> {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return samplePosts.find((post) => post.slug === slug && (includeDraft || post.status === "published")) ?? null;
-  }
-  let query = getSupabase().from("blog_posts").select(columns).eq("slug", slug);
-  if (!includeDraft) query = query.eq("status", "published");
-  const { data, error } = await query.maybeSingle();
-  if (error) throw error;
-  return data ? serialize(data as PostRow) : samplePosts.find((post) => post.slug === slug && (includeDraft || post.status === "published")) ?? null;
+  if (!isDatabaseConfigured()) return samplePosts.find((post) => post.slug === slug && (includeDraft || (post.status === "published" && post.visibility === "public"))) ?? null;
+  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts WHERE slug = $1 ${includeDraft ? "" : "AND status = 'published' AND visibility = 'public'"} LIMIT 1`, [slug]);
+  return rows[0] ? serialize(rows[0]) : null;
 }
 
 export async function getPostById(id: string): Promise<BlogPost | null> {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
-  const { data, error } = await getSupabase().from("blog_posts").select(columns).eq("id", id).maybeSingle();
-  if (error) throw error;
-  return data ? serialize(data as PostRow) : null;
+  if (!isDatabaseConfigured() || !/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts WHERE id = $1`, [id]);
+  return rows[0] ? serialize(rows[0]) : null;
 }
 
 export async function savePost(input: PostInput & Pick<BlogPost, "createdAt" | "updatedAt"> & { publishedAt?: string }, id?: string): Promise<BlogPost> {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error("Supabase is required for admin post writes.");
-  const now = new Date().toISOString();
-  const document = {
-    title: input.title,
-    slug: input.slug,
-    excerpt: input.excerpt,
-    content: input.content,
-    status: input.status,
-    updated_at: now,
-    published_at: input.publishedAt ?? null,
-  };
-  const query = getSupabase().from("blog_posts");
+  if (id && isSampleId(id)) throw new Error("Bundled sample posts cannot be edited");
+  const visibility = input.visibility ?? "public";
   const result = id
-    ? await query.update(document).eq("id", id).select(columns).maybeSingle()
-    : await query.insert({ ...document, created_at: now }).select(columns).single();
-  if (result.error) throw result.error;
-  if (!result.data) throw new Error("Post not found");
-  return serialize(result.data as PostRow);
+    ? await query<PostRow>(`UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4::jsonb, status=$5, visibility=$6, updated_at=$7, published_at=$8 WHERE id=$9 RETURNING ${columns}`, [input.title, input.slug, input.excerpt, JSON.stringify(input.content), input.status, visibility, input.updatedAt, input.publishedAt ?? null, id])
+    : await query<PostRow>(`INSERT INTO blog_posts (title,slug,excerpt,content,status,visibility,created_at,updated_at,published_at) VALUES ($1,$2,$3,$4::jsonb,$5,$6,$7,$7,$8) RETURNING ${columns}`, [input.title, input.slug, input.excerpt, JSON.stringify(input.content), input.status, visibility, input.createdAt, input.publishedAt ?? null]);
+  if (!result.rows[0]) throw new Error("Post not found");
+  return serialize(result.rows[0]);
 }
 
 export async function slugInUse(slug: string, exceptId?: string): Promise<boolean> {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return false;
-  let query = getSupabase().from("blog_posts").select("id", { head: true, count: "exact" }).eq("slug", slug);
-  if (exceptId) query = query.neq("id", exceptId);
-  const { count, error } = await query;
-  if (error) throw error;
-  return (count ?? 0) > 0;
+  const isUuid = Boolean(exceptId && /^[0-9a-f-]{36}$/i.test(exceptId));
+  const { rows } = await query<{ exists: boolean }>("SELECT EXISTS (SELECT 1 FROM blog_posts WHERE slug=$1 AND (NOT $2::boolean OR id <> $3::uuid)) AS exists", [slug, isUuid, isUuid ? exceptId : null]);
+  return rows[0].exists;
+}
+
+export async function setPostVisibility(id: string, visibility: BlogPost["visibility"]): Promise<BlogPost | null> {
+  if (isSampleId(id)) return null;
+  const { rows } = await query<PostRow>(`UPDATE blog_posts SET visibility=$2, updated_at=now() WHERE id=$1 RETURNING ${columns}`, [id, visibility]);
+  return rows[0] ? serialize(rows[0]) : null;
 }
 
 export async function deletePost(id: string): Promise<boolean> {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return false;
-  const { data, error } = await getSupabase().from("blog_posts").delete().eq("id", id).select("id").maybeSingle();
-  if (error) throw error;
-  return Boolean(data);
+  if (isSampleId(id)) return false;
+  const { rowCount } = await query("DELETE FROM blog_posts WHERE id=$1", [id]);
+  return Boolean(rowCount);
 }
