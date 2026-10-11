@@ -8,8 +8,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     if (typeof body.email !== "string" || body.email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
-    const genericResponse = () => NextResponse.json({ message: "If this address is authorized, a sign-in code will be sent." });
-    if (!allowedEmails().includes(email)) return genericResponse();
+    if (!allowedEmails().includes(email)) return NextResponse.json({ error: "This email address is not authorized for admin access." }, { status: 403 });
     const throttleKey = createHash("sha256").update(email).digest("hex");
     const { getSupabase } = await import("@/lib/blog/db");
     const { data: allowed, error: throttleError } = await getSupabase().rpc("claim_blog_login_rate_limit", {
@@ -18,7 +17,7 @@ export async function POST(request: Request) {
       p_next_allowed_at: new Date(Date.now() + 60_000).toISOString(),
     });
     if (throttleError) throw throttleError;
-    if (!allowed) return genericResponse();
+    if (!allowed) return NextResponse.json({ message: "If this address is authorized, a sign-in code will be sent." });
     const origin = trustedRequestOrigin(request);
     const code = String(randomInt(0, 1_000_000)).padStart(6, "0");
     await createLoginToken(email, code);

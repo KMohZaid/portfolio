@@ -42,7 +42,8 @@ export async function listPosts(includeDrafts = false): Promise<BlogPost[]> {
     .order("published_at", { ascending: false, nullsFirst: false })
     .order("updated_at", { ascending: false });
   if (error) throw error;
-  return (data as PostRow[]).map(serialize);
+  const posts = (data as PostRow[]).map(serialize);
+  return posts.length ? posts : samplePosts.filter((post) => includeDrafts || post.status === "published");
 }
 
 export async function getPostBySlug(slug: string, includeDraft = false): Promise<BlogPost | null> {
@@ -53,7 +54,7 @@ export async function getPostBySlug(slug: string, includeDraft = false): Promise
   if (!includeDraft) query = query.eq("status", "published");
   const { data, error } = await query.maybeSingle();
   if (error) throw error;
-  return data ? serialize(data as PostRow) : null;
+  return data ? serialize(data as PostRow) : samplePosts.find((post) => post.slug === slug && (includeDraft || post.status === "published")) ?? null;
 }
 
 export async function getPostById(id: string): Promise<BlogPost | null> {

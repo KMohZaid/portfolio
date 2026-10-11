@@ -47,7 +47,7 @@ function LoginForm() {
           <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"><Mail /></div>
           <p className="font-mono text-sm text-primary">~/admin</p>
           <h1 className="mt-2 font-mono text-3xl font-bold">Sign in</h1>
-          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Request a six-digit sign-in code by email. Only addresses on the admin allowlist can access the dashboard.</p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">Request a six-digit sign-in code by email. Only addresses on the admin allowlist can access the dashboard. If your email is not allowed, you’ll see a clear message.</p>
           {query.get("error") && <p role="alert" className="mt-4 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">That sign-in code is invalid, expired, or no longer authorized. Request a new one.</p>}
           <form className="mt-6 space-y-4" onSubmit={submit}>
             <label htmlFor="email" className="block text-sm font-medium">Email address</label>

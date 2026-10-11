@@ -15,10 +15,10 @@ The portfolio itself still runs without blog configuration; the public blog then
 
 ## Blog and admin configuration
 
-1. Create a Supabase project and run [`supabase/schema.sql`](supabase/schema.sql) in its SQL Editor. To load the three demo articles, run [`supabase/sample-posts.sql`](supabase/sample-posts.sql) afterward. The public blog also includes bundled read-only samples when the server Supabase credentials are absent.
+1. Create a Supabase project and run [`supabase/schema.sql`](supabase/schema.sql) in its SQL Editor. To load the three demo articles, run [`supabase/sample-posts.sql`](supabase/sample-posts.sql) afterward. The public blog uses bundled read-only demo posts when server Supabase credentials are absent or the posts table has no matching posts (for an empty published list, or an unknown slug). Existing Supabase posts take precedence.
 2. Set `SUPABASE_URL` to the project URL and `SUPABASE_SERVICE_ROLE_KEY` to the server secret/service-role key from Project Settings → API in `.env.local` and your server deployment environment. The publishable key is not a substitute for the secret/service-role key required by this server-only persistence layer. The server key bypasses row-level security: keep it secret, never prefix it with `NEXT_PUBLIC_`, and never expose it in browser code. The project's publishable key is not needed by this server-only app.
 3. Set `AUTH_SECRET` to a stable random secret of at least 32 characters; generate one with `openssl rand -base64 48`.
-4. Set `ADMIN_EMAILS` to comma-separated admin email addresses, normalized case-insensitively. The example is `mzaidkapadia+portfolio@gmail.com`; replace it if a different admin should be authorized.
+4. Set `ADMIN_EMAILS` to comma-separated admin email addresses, normalized case-insensitively. The example is `mzaidkapadia@gmail.com`; replace it if a different admin should be authorized.
 5. Set `RESEND_API_KEY` and `AUTH_FROM_EMAIL` to a sender configured and verified with Resend.
 6. `APP_URL` is an optional server-only canonical origin used to construct the email's sign-in page URL; set it to the current deployment's origin (for example, `https://your-domain.example`) when you want a fixed canonical domain. If omitted, the request host is used only after matching it against `TRUSTED_HOSTS` (comma-separated host[:port] allowlist; localhost defaults are for development only). In production, the origin must use HTTPS. These server-only settings avoid hardcoding a domain in client bundles and prevent arbitrary host headers from poisoning email links.
 
