@@ -34,7 +34,7 @@ export async function sendLoginCode(email: string, code: string, origin: string)
   if (!process.env.RESEND_API_KEY || !process.env.AUTH_FROM_EMAIL) {
     throw new Error("Email sign-in is not configured. Set RESEND_API_KEY and AUTH_FROM_EMAIL to a verified sender.");
   }
-  const url = `${origin.replace(/\/$/, "")}/admin/login?email=${encodeURIComponent(email)}`;
+  const url = `${origin.replace(/\/$/, "")}/admin/login`;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { error } = await resend.emails.send({ from: process.env.AUTH_FROM_EMAIL, to: email, subject: "Your sign-in code", html: `<p>Your one-time code is valid for five minutes.</p><p><strong>${code}</strong></p><p><a href="${url}">Open the secure sign-in form</a>, then enter the code above. The code is not included in the link.</p><p>If you did not request this, ignore this email.</p>` });
   if (error) throw new Error("Unable to send sign-in email. Check the Resend sender configuration.");
