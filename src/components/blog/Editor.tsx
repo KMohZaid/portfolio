@@ -33,7 +33,13 @@ function ImageUploader({ uploadImages }: { uploadImages: boolean }) {
 
 export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
   const [mode, setMode] = useState<Mode>("classic");
+  const [document, setDocument] = useState(initialContent);
   const extensions = useMemo(() => mode === "notion" ? notionExtensions : classicExtensions, [mode]);
+
+  function updateDocument(content: JSONContent) {
+    setDocument(content);
+    onChange(content);
+  }
   return (
     <section className="overflow-hidden rounded-xl border border-border bg-card">
       <DomternalTheme />
@@ -44,7 +50,7 @@ export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
           <button type="button" aria-pressed={mode === "notion"} onClick={() => setMode("notion")} className={`rounded-md px-3 py-1.5 ${mode === "notion" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>Notion style</button>
         </div>
       </div>
-      <Domternal key={mode} extensions={extensions} content={initialContent} outputFormat="json" preset={mode === "notion" ? "notion" : undefined} immediatelyRender={false} onUpdate={({ editor }) => onChange(editor.getJSON() as JSONContent)}>
+      <Domternal key={mode} extensions={extensions} content={document} outputFormat="json" preset={mode === "notion" ? "notion" : undefined} immediatelyRender={false} onUpdate={({ editor }) => updateDocument(editor.getJSON() as JSONContent)}>
         <Domternal.Toolbar />
         <Domternal.Content />
         <Domternal.BubbleMenu />
