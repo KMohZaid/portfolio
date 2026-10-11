@@ -54,9 +54,9 @@ function LoginForm() {
             <input id="email" type="email" required autoComplete="email" value={email} readOnly={Boolean(message)} onChange={(event) => setEmail(event.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-3 outline-none focus:border-primary" placeholder="you@example.com" />
             {message && <label htmlFor="code" className="block text-sm font-medium">Six-digit code</label>}
             {message && <input id="code" type="text" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required autoComplete="one-time-code" value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, ""))} className="w-full rounded-lg border border-border bg-background px-3 py-3 font-mono tracking-[0.4em] outline-none focus:border-primary" placeholder="000000" />}
-            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+            {error && <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm font-medium text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-100">{error}</p>}
             {message && <p role="status" className="rounded-lg bg-terminal-green/10 p-3 text-sm text-terminal-green">{message}</p>}
-            <button disabled={busy} className="w-full rounded-lg bg-primary px-4 py-3 font-medium text-primary-foreground disabled:opacity-50">{busy ? "Sending…" : message ? "Verify code" : "Email me a sign-in code"}</button>
+            <button disabled={busy} className="w-full rounded-lg bg-primary px-4 py-3 font-medium text-primary-foreground hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Sending…" : message ? "Verify code" : "Email me a sign-in code"}</button>
             {message && <button type="button" onClick={() => { setMessage(""); setCode(""); setError(""); }} className="w-full text-sm text-muted-foreground hover:text-foreground">Use a different email</button>}
           </form>
         </div>

@@ -24,6 +24,9 @@ export async function POST(request: Request) {
     await sendLoginCode(email, code, origin);
     return NextResponse.json({ message: "If this address is authorized, a sign-in code will be sent." });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to request sign-in." }, { status: 503 });
+    const diagnostic = error instanceof Error ? error.message : "Unknown sign-in request error";
+    const category = /SUPABASE|AUTH_SECRET|RESEND|AUTH_FROM_EMAIL|APP_URL|TRUSTED_HOSTS|trusted|origin/i.test(diagnostic) ? diagnostic.replace(/(key|secret|token|password)\s*[:=]\s*\S+/gi, "$1=[redacted]") : "External service request failed";
+    console.error("[auth/request] Sign-in request failed:", category);
+    return NextResponse.json({ error: "Unable to request sign-in. Check server configuration and logs." }, { status: 503 });
   }
 }
