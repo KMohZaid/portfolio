@@ -7,24 +7,25 @@ Personal portfolio built with Next.js, React, and Tailwind CSS. The blog uses a 
 ```bash
 pnpm install
 cp .env.example .env.local
-# Set database, authentication, allowlist, and email settings (see below)
+# Set database, Better Auth, provider, and admin allowlist settings (see below)
 pnpm dev
 ```
 
-The portfolio itself still runs without blog configuration; the public blog then uses three bundled read-only sample posts. Admin sign-in and writes require a configured PostgreSQL database and email sender. Use Node.js 20.9+ and pnpm.
+The portfolio itself still runs without blog configuration; the public blog then uses three bundled read-only sample posts. Reader accounts and admin writes require a configured PostgreSQL database and at least one OAuth provider. Use Node.js 20.9+ and pnpm.
 
 ## Blog and admin configuration
 
-1. Configure a PostgreSQL database and set `DATABASE_URL` to its direct connection string. Apply [`migrations/001_blog.sql`](migrations/001_blog.sql) with `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_blog.sql`. The runtime prefers `DATABASE_URL_POOLED` when set and otherwise uses `DATABASE_URL`. Both are server-only and must not use a `NEXT_PUBLIC_` prefix.
-2. Set `AUTH_SECRET` to a stable random secret of at least 32 characters; generate one with `openssl rand -base64 48`.
-3. Set `ADMIN_EMAILS` to comma-separated admin email addresses, normalized case-insensitively. The example is `kthecoder7@gmail.com`; replace it if a different admin should be authorized.
-4. Set `RESEND_API_KEY` and `AUTH_FROM_EMAIL` to a sender configured and verified with Resend.
-5. `APP_URL` is an optional server-only canonical origin used to construct the email's sign-in page URL; set it to the current deployment's origin when you want a fixed canonical domain. If omitted, the request host is used only after matching it against `TRUSTED_HOSTS` (comma-separated host[:port] allowlist; localhost defaults are for development only). In production, the origin must use HTTPS. These server-only settings avoid hardcoding a domain in client bundles and prevent arbitrary host headers from poisoning email links.
-6. Load four idempotent Domternal-format example articles by running `pnpm db:seed` after setting `DATABASE_URL`; this prints only each inserted title and slug.
+1. Configure the existing PostgreSQL database and set `DATABASE_URL` to its direct connection string. Apply [`migrations/001_blog.sql`](migrations/001_blog.sql) and [`migrations/002_better_auth.sql`](migrations/002_better_auth.sql) using `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f <migration>`. Both are idempotent and preserve existing blog data and legacy auth tables. The runtime prefers `DATABASE_URL_POOLED` when set; Better Auth and blog persistence use the same PostgreSQL database. Keep both URLs server-side.
+2. Set `AUTH_SECRET` to a stable random secret of at least 32 characters; generate one with `openssl rand -base64 48`. Set `BETTER_AUTH_URL` to the site origin only, e.g. `https://web.kmohzaid.eu.org` (do not append `/api/auth`); the auth handler is mounted at `/api/auth`.
+3. `BETTER_AUTH_API_KEY` is optional for the current Dash plugin setup; leave it blank until a valid key is available, and keep any supplied key server-only. Authentication is self-hosted against your PostgreSQL database and does not depend on Dash ownership verification.
+4. Configure Google and/or GitHub OAuth credentials (`GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET`). Register callback URLs `https://web.kmohzaid.eu.org/api/auth/callback/google` and/or `/api/auth/callback/github` at the corresponding provider. For a custom OpenID Connect provider, set `CUSTOM_OIDC_PROVIDER_ID`, `CUSTOM_OIDC_DISCOVERY_URL`, `CUSTOM_OIDC_CLIENT_ID`, and optionally secret/name/scopes. For local development register `http://localhost:3000/api/auth/callback/<provider>` and allow `http://localhost:3000` in `BETTER_AUTH_TRUSTED_ORIGINS`.
+5. Set `ADMIN_EMAILS` to comma-separated administrator email addresses. OAuth sign-in gives users reader accounts, but admin pages and every admin API independently validate Better Auth's server-side session, verified email status, and the email against this allowlist. Do not treat authenticated readers as admins.
+6. Optionally set `BETTER_AUTH_TRUSTED_ORIGINS` to comma-separated browser origins (not callback URLs). `APP_URL` is supported as a backwards-compatible fallback origin. Never trust arbitrary forwarded host values.
+7. Load the example articles only when desired by running `pnpm db:seed`; this prints only each inserted title and slug.
 
-The SQL uses ordinary PostgreSQL tables, constraints, and indexes. No provider-specific extensions, SDKs, roles, or row-level security setup are required. The application connects only from server code; never expose database URLs in a client bundle, tracked files, or logs.
+The SQL uses ordinary PostgreSQL tables, constraints, and indexes. No provider-specific extensions, SDKs, or RLS setup is required. Never expose database URLs, `AUTH_SECRET`, OAuth secrets, or `BETTER_AUTH_API_KEY` in a client bundle, tracked file, or logs.
 
-Admin login is passwordless: a random six-digit code is emailed only to allowlisted addresses, expires after five minutes, and is stored only as an HMAC hash. Codes are single-use and verification attempts are rate-limited; successful verification issues an HTTP-only, same-site session cookie (seven-day session). Email verification uses `APP_URL` when configured; otherwise the request origin is accepted only when its host is on `TRUSTED_HOSTS`, and HTTPS is required in production. Configure trusted proxy host/protocol forwarding carefully. Do not deploy with a sample secret or an unverified sender. The code does not bypass email verification when credentials are missing.
+OAuth providers authenticate users and Better Auth persists the user, provider account, and database-backed HTTP-only session. Admin access is a separate server-side allowlist decision that additionally requires a verified email; new users do not acquire admin privileges merely by signing in. Account linking is disabled, so matching emails from separate providers do not silently merge identities. The sign-in page preserves a validated local return destination. Signed-in users can view their profile at `/blog/account`; the purchases/access area is a placeholder and no payment processing is enabled. This is Better Auth, not NextAuth.js/Auth.js.
 
 ## Writing and images
 

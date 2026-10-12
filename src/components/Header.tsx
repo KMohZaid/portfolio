@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, Code2, FolderGit2, Home, LockKeyhole, Menu, MessageSquare, User, X } from "lucide-react";
+import { BookOpen, Code2, FolderGit2, Home, LockKeyhole, LogIn, Menu, MessageSquare, User, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -19,11 +19,12 @@ interface HeaderProps { activeSection?: string; onNavigate?: (section: string) =
 
 export const Header = ({ activeSection, onNavigate }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [adminAuthenticated, setAdminAuthenticated] = useState(false);
-  useEffect(() => { fetch("/api/auth/session").then((response) => response.json()).then((data) => setAdminAuthenticated(Boolean(data.authenticated))).catch(() => setAdminAuthenticated(false)); }, []);
+  const [authState, setAuthState] = useState<{ authenticated: boolean; signedIn: boolean }>({ authenticated: false, signedIn: false });
+  useEffect(() => { fetch("/api/auth/session", { cache: "no-store" }).then((response) => response.json()).then((data) => setAuthState({ authenticated: Boolean(data.authenticated), signedIn: Boolean(data.signedIn) })).catch(() => setAuthState({ authenticated: false, signedIn: false })); }, []);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
-  const links = [...navItems, ...(adminAuthenticated ? [{ id: "admin", label: "Admin", icon: LockKeyhole, isSection: false, path: "/admin" }] : [])];
+  const signInPath = `/admin/login?returnTo=${encodeURIComponent(pathname || "/blog")}`;
+  const links = [...navItems, ...(authState.signedIn ? [{ id: "account", label: "Account", icon: User, isSection: false, path: "/blog/account" }] : [{ id: "signin", label: "Sign in", icon: LogIn, isSection: false, path: signInPath }]), ...(authState.authenticated ? [{ id: "admin", label: "Admin", icon: LockKeyhole, isSection: false, path: "/admin" }] : [])];
   const handleNavClick = (item: (typeof navItems)[number]) => {
     if (item.isSection && onNavigate && isHomePage) { onNavigate(item.id); setIsMobileMenuOpen(false); }
     else if (item.isSection && !isHomePage) window.location.href = `/#${item.id}`;

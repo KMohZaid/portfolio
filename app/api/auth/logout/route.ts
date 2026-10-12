@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { clearSession } from "@/lib/blog/auth";
+import { auth } from "@/lib/blog/better-auth";
 
 export async function POST(request: Request) {
-  await clearSession();
+  await auth.api.signOut({ headers: request.headers });
   return NextResponse.redirect(new URL("/admin/login", request.url), { status: 303 });
 }
