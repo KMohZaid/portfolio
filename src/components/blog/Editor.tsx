@@ -3,15 +3,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Domternal, useCurrentEditor } from "@domternal/react";
 import { StarterKit, BubbleMenu, type JSONContent } from "@domternal/core";
+import { CodeBlockLowlight } from "@domternal/extension-code-block-lowlight";
+import { createLowlight, common } from "lowlight";
 import { BlockContextMenu, BlockHandle, KeyboardReorder, SlashCommand, SmartPaste, FloatingMenu as BlockFloatingMenu } from "@domternal/extension-block-controls";
 import { Image } from "@domternal/extension-image";
 import { ImagePlus } from "lucide-react";
+import { VideoEmbed, VideoEmbedInserter } from "./VideoEmbed";
 import { DomternalTheme } from "./DomternalTheme";
 
 type Props = { initialContent: JSONContent; onChange: (content: JSONContent) => void; uploadImages: boolean };
 type Mode = "classic" | "notion";
 
-const classicExtensions = [StarterKit.configure({ link: { openOnClick: false } }), BubbleMenu, Image.configure({ allowBase64: false, maxFileSize: 4_700_000 })];
+const lowlight = createLowlight(common);
+const classicExtensions = [StarterKit.configure({ link: { openOnClick: false }, codeBlock: false }), CodeBlockLowlight.configure({ lowlight }), VideoEmbed, BubbleMenu, Image.configure({ allowBase64: false, maxFileSize: 4_700_000 })];
 const notionExtensions = [...classicExtensions, BlockHandle.configure({ nested: true }), BlockContextMenu, SlashCommand, SmartPaste, KeyboardReorder, BlockFloatingMenu.configure({ requireExplicitTrigger: true })];
 
 function ImageUploader({ uploadImages }: { uploadImages: boolean }) {
@@ -55,6 +59,7 @@ export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
         <Domternal.Content />
         <Domternal.BubbleMenu />
         {mode === "notion" && <Domternal.FloatingMenu requireExplicitTrigger />}
+        <VideoEmbedInserter />
         <ImageUploader uploadImages={uploadImages} />
       </Domternal>
       <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">Both modes edit the same JSON document. Classic formatting and images are retained when switching. Notion block handles, menus, and slash commands use MIT/free Domternal packages.</p>

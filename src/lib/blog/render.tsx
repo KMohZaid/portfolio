@@ -1,4 +1,22 @@
 import type { JSONContent } from "@domternal/core";
+import { createCodeHighlighter } from "@domternal/extension-code-block-lowlight";
+import { createLowlight, common } from "lowlight";
+
+const highlightCode = createCodeHighlighter(createLowlight(common));
+const supportedVideoHosts = new Set(["www.youtube-nocookie.com", "player.vimeo.com"]);
+const highlightedMarkup = /<span class="hljs-[a-z0-9_-]+">|<\/span>/g;
+const highlightTag = /^<span class="(hljs-[a-z0-9_-]+)">$/;
+
+function videoEmbedUrl(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" || !supportedVideoHosts.has(url.hostname)) return undefined;
+    if (url.hostname === "www.youtube-nocookie.com" && /^\/embed\/[\w-]+$/.test(url.pathname)) return url.toString();
+    if (url.hostname === "player.vimeo.com" && /^\/video\/\d+$/.test(url.pathname)) return url.toString();
+  } catch {}
+  return undefined;
+}
 
 function safeHref(value: unknown) {
   if (typeof value !== "string") return undefined;
@@ -37,7 +55,23 @@ function renderNode(node: JSONContent, key: string): React.ReactNode {
     case "orderedList": return <ol key={key}>{children}</ol>;
     case "listItem": return <li key={key}>{children}</li>;
     case "blockquote": return <blockquote key={key}>{children}</blockquote>;
-    case "codeBlock": return <pre key={key}><code>{children}</code></pre>;
+    case "codeBlock": {
+      const code = (node.content ?? []).map((child) => child.text ?? "").join("");
+      const language = typeof node.attrs?.language === "string" ? node.attrs.language : undefined;
+      const highlighted = highlightCode(code, language ?? null);
+      const segments = highlighted?.split(highlightedMarkup);
+      let classStack: string[] = [];
+      return <pre key={key}><code className={language ? `language-${language}` : undefined}>{segments ? segments.map((segment, index) => {
+        const match = segment.match(highlightTag);
+        if (match) { classStack.push(match[1]); return null; }
+        if (segment === "</span>") { classStack.pop(); return null; }
+        return classStack.length ? <span key={index} className={classStack.join(" ")}>{segment}</span> : <span key={index}>{segment}</span>;
+      }) : code}</code></pre>;
+    }
+    case "videoEmbed": {
+      const src = videoEmbedUrl(node.attrs?.src);
+      return src ? <figure key={key} className="blog-video"><iframe src={src} title={String(node.attrs?.title ?? "Embedded video")} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen /></figure> : null;
+    }
     case "horizontalRule": return <hr key={key} />;
     case "hardBreak": return <br key={key} />;
     case "image": {

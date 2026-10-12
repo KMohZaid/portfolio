@@ -245,6 +245,12 @@
   .blog-prose pre { @apply overflow-x-auto rounded-xl border border-border bg-card p-4 font-mono text-sm; }
   .blog-prose code { @apply rounded bg-muted px-1.5 py-0.5 font-mono text-sm; }
   .blog-prose pre code { @apply bg-transparent p-0; }
+  .blog-prose pre .hljs-keyword, .blog-prose pre .hljs-selector-tag, .blog-prose pre .hljs-literal { @apply text-primary; }
+  .blog-prose pre .hljs-string, .blog-prose pre .hljs-attr { @apply text-emerald-500; }
+  .blog-prose pre .hljs-comment { @apply text-muted-foreground italic; }
+  .blog-prose pre .hljs-number, .blog-prose pre .hljs-built_in { @apply text-amber-500; }
+  .blog-video { @apply aspect-video overflow-hidden rounded-xl border border-border bg-card; }
+  .blog-video iframe { @apply h-full w-full; }
   .blog-prose a { @apply text-primary underline underline-offset-4; }
   .blog-prose img { @apply mx-auto max-h-[38rem] rounded-xl object-contain; }
   .blog-prose figure { @apply my-8; }
