@@ -14,6 +14,7 @@
   "dependencies": {
     "@domternal/core": "1.3.1",
     "@domternal/extension-block-controls": "1.3.1",
+    "@domternal/extension-code-block-lowlight": "1.3.1",
     "@domternal/extension-image": "1.3.1",
     "@domternal/pm": "1.3.1",
     "@domternal/react": "1.3.1",
@@ -34,6 +35,7 @@
     "date-fns": "^3.6.0",
     "framer-motion": "^12.23.26",
     "jose": "^6.2.12",
+    "lowlight": "^3.3.0",
     "lucide-react": "^0.462.0",
     "next": "^16.0.0",
     "next-themes": "^0.3.0",

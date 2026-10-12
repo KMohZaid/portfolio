@@ -37,5 +37,10 @@ export async function sendLoginCode(email: string, code: string, origin: string)
   const url = `${origin.replace(/\/$/, "")}/admin/login`;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { error } = await resend.emails.send({ from: process.env.AUTH_FROM_EMAIL, to: email, subject: "Your sign-in code", html: `<p>Your one-time code is valid for five minutes.</p><p><strong>${code}</strong></p><p><a href="${url}">Open the secure sign-in form</a>, then enter the code above. The code is not included in the link.</p><p>If you did not request this, ignore this email.</p>` });
-  if (error) throw new Error("Unable to send sign-in email. Check the Resend sender configuration.");
+  if (error) {
+    const details = JSON.stringify(error);
+    const statusCode = typeof error === "object" && error !== null && "statusCode" in error ? error.statusCode : null;
+    if (statusCode === 403 || /testing domain|only send|verify.*domain|domain.*verify/i.test(details)) throw new Error("Resend is still in testing mode and can only deliver to the account owner's email. Verify a domain you own and set AUTH_FROM_EMAIL to that domain, or configure ADMIN_EMAILS to the Resend account owner's address for testing.");
+    throw new Error("Unable to send sign-in email. Check the Resend sender configuration.");
+  }
 }
