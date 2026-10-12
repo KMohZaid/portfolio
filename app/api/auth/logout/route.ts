@@ -21,5 +21,5 @@ export async function POST(request: Request) {
     } catch { /* use the configured canonical origin */ }
   }
 
-  return NextResponse.redirect(new URL("/admin/login", redirectOrigin), { status: 303 });
+  return NextResponse.redirect(new URL("/login", redirectOrigin), { status: 303 });
 }

@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint app/blog app/admin app/api/admin app/api/auth src/components/blog src/components/Header.tsx src/components/Footer.tsx",
+    "lint": "eslint app/blog app/admin app/api/admin app/api/auth app/login src/components/blog src/components/Header.tsx src/components/Footer.tsx",
     "typecheck": "tsc --noEmit",
     "db:seed": "node scripts/seed-demo-posts.mjs"
   },

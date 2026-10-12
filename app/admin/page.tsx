@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ExternalLink, FilePlus2, Pencil } from "lucide-react";
+import { ArrowLeft, ExternalLink, FilePlus2, Pencil, UserRound } from "lucide-react";
 import { getAdminEmail } from "@/lib/blog/auth";
 import { listPosts } from "@/lib/blog/posts";
 import { UploadManager } from "@/components/blog/UploadManager";
@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const email = await getAdminEmail();
-  if (!email) redirect("/admin/login");
+  if (!email) redirect("/login?returnTo=%2Fadmin");
 
   let posts = [];
   let error = "";
@@ -28,6 +28,7 @@ export default async function AdminPage() {
             <p className="mt-2 text-muted-foreground">Manage drafts, published or hidden posts, and your upload index.</p>
           </div>
           <div className="flex gap-3">
+            <Link href="/blog/account" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:border-primary"><UserRound size={16} /> Account</Link>
             <Link href="/blog" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:border-primary"><ExternalLink size={16} /> View blog</Link>
             <Link href="/admin/new" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><FilePlus2 size={16} /> New post</Link>
           </div>
@@ -41,9 +42,9 @@ export default async function AdminPage() {
                 <div key={post._id} className="flex flex-wrap items-center gap-4 px-5 py-4">
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="truncate font-medium">{post.title}</h3>
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${post.status === "published" ? "bg-terminal-green/15 text-terminal-green" : "bg-muted text-muted-foreground"}`}>{post.status}</span>
-                      {post.status === "published" && <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{post.visibility}</span>}
+                      {post.thumbnail && <img src={post.thumbnail} alt="" className="h-12 w-16 rounded-md border border-border object-cover" />}
+                      <div className="min-w-0"><h3 className="truncate font-medium">{post.title}</h3>
+                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs ${post.status === "published" && post.visibility === "public" ? "bg-terminal-green/15 text-terminal-green" : "bg-muted text-muted-foreground"}`}>{post.status === "published" && post.visibility === "hidden" ? "hidden" : post.status}</span></div>
                     </div>
                     <p className="mt-1 truncate font-mono text-xs text-muted-foreground">/blog/{post.slug} · updated {new Date(post.updatedAt).toLocaleDateString()}</p>
                   </div>

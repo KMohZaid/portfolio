@@ -10,6 +10,7 @@ type PostRow = {
   title: string;
   slug: string;
   excerpt: string;
+  thumbnail: string | null;
   content: BlogPost["content"];
   status: BlogPost["status"];
   visibility: BlogPost["visibility"];
@@ -28,6 +29,7 @@ function serialize(post: PostRow): BlogPost {
     title: post.title,
     slug: post.slug,
     excerpt: post.excerpt,
+    thumbnail: post.thumbnail,
     content: post.content,
     status: post.status,
     visibility: post.visibility,
@@ -37,7 +39,7 @@ function serialize(post: PostRow): BlogPost {
   };
 }
 
-const columns = "id,title,slug,excerpt,content,status,visibility,created_at,updated_at,published_at";
+const columns = "id,title,slug,excerpt,thumbnail,content,status,visibility,created_at,updated_at,published_at";
 const isSampleId = (id: string) => id.startsWith("sample-");
 
 export async function listPosts(includeDrafts = false): Promise<BlogPost[]> {
@@ -62,8 +64,8 @@ export async function savePost(input: PostInput & Pick<BlogPost, "createdAt" | "
   if (id && isSampleId(id)) throw new Error("Bundled sample posts cannot be edited");
   const visibility = input.visibility ?? "public";
   const result = id
-    ? await query<PostRow>(`UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, content=$4::jsonb, status=$5, visibility=$6, updated_at=$7, published_at=$8 WHERE id=$9 RETURNING ${columns}`, [input.title, input.slug, input.excerpt, JSON.stringify(input.content), input.status, visibility, input.updatedAt, input.publishedAt ?? null, id])
-    : await query<PostRow>(`INSERT INTO blog_posts (title,slug,excerpt,content,status,visibility,created_at,updated_at,published_at) VALUES ($1,$2,$3,$4::jsonb,$5,$6,$7,$7,$8) RETURNING ${columns}`, [input.title, input.slug, input.excerpt, JSON.stringify(input.content), input.status, visibility, input.createdAt, input.publishedAt ?? null]);
+    ? await query<PostRow>(`UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, thumbnail=$4, content=$5::jsonb, status=$6, visibility=$7, updated_at=$8, published_at=$9 WHERE id=$10 RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.thumbnail, JSON.stringify(input.content), input.status, visibility, input.updatedAt, input.publishedAt ?? null, id])
+    : await query<PostRow>(`INSERT INTO blog_posts (title,slug,excerpt,thumbnail,content,status,visibility,created_at,updated_at,published_at) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$8,$9) RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.thumbnail, JSON.stringify(input.content), input.status, visibility, input.createdAt, input.publishedAt ?? null]);
   if (!result.rows[0]) throw new Error("Post not found");
   return serialize(result.rows[0]);
 }

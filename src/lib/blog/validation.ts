@@ -15,6 +15,7 @@ export const postSchema = z.object({
   title: z.string().trim().min(1).max(180),
   slug: z.string().trim().min(1).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   excerpt: z.string().trim().max(500).default(""),
+  thumbnail: z.union([safeUrl, z.literal("")]).optional().transform((value) => value || null).default(null),
   content: z.object({ type: z.literal("doc"), content: z.array(contentNodeSchema).max(5000) }).passthrough(),
   status: z.enum(["draft", "published"]),
   visibility: z.enum(["public", "hidden"]).default("public"),

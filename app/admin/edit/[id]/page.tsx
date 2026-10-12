@@ -7,7 +7,7 @@ import { getPostById } from "@/lib/blog/posts";
 
 export const dynamic = "force-dynamic";
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
-  if (!(await getAdminEmail())) redirect("/admin/login");
+  if (!(await getAdminEmail())) redirect(`/login?returnTo=${encodeURIComponent(`/admin/edit/${(await params).id}`)}`);
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   let post;

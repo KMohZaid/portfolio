@@ -7,7 +7,7 @@ import { CodeBlockLowlight } from "@domternal/extension-code-block-lowlight";
 import { createLowlight, common } from "lowlight";
 import { BlockContextMenu, BlockHandle, KeyboardReorder, SlashCommand, SmartPaste, FloatingMenu as BlockFloatingMenu } from "@domternal/extension-block-controls";
 import { Image } from "@domternal/extension-image";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, Blocks, Type } from "lucide-react";
 import { VideoEmbed, VideoEmbedInserter } from "./VideoEmbed";
 import { DomternalTheme } from "./DomternalTheme";
 
@@ -36,7 +36,7 @@ function ImageUploader({ uploadImages }: { uploadImages: boolean }) {
 }
 
 export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
-  const [mode, setMode] = useState<Mode>("classic");
+  const [mode, setMode] = useState<Mode>("notion");
   const [document, setDocument] = useState(initialContent);
   const extensions = useMemo(() => mode === "notion" ? notionExtensions : classicExtensions, [mode]);
 
@@ -50,8 +50,8 @@ export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
       <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
         <p className="text-sm font-medium">Domternal editor <span className="text-xs text-muted-foreground">MIT</span></p>
         <div aria-label="Editor mode" className="flex rounded-lg bg-muted/60 p-1 text-xs">
-          <button type="button" aria-pressed={mode === "classic"} onClick={() => setMode("classic")} className={`rounded-md px-3 py-1.5 ${mode === "classic" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>Classic</button>
-          <button type="button" aria-pressed={mode === "notion"} onClick={() => setMode("notion")} className={`rounded-md px-3 py-1.5 ${mode === "notion" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}>Notion style</button>
+          <button type="button" aria-pressed={mode === "classic"} onClick={() => setMode("classic")} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${mode === "classic" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><Type size={14} /> Normal</button>
+          <button type="button" aria-pressed={mode === "notion"} onClick={() => setMode("notion")} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${mode === "notion" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><Blocks size={14} /> Notion style</button>
         </div>
       </div>
       <Domternal key={mode} extensions={extensions} content={document} outputFormat="json" preset={mode === "notion" ? "notion" : undefined} immediatelyRender={false} onUpdate={({ editor }) => updateDocument(editor.getJSON() as JSONContent)}>
