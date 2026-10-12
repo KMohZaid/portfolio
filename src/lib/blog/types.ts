@@ -5,6 +5,7 @@ export type BlogPost = {
   title: string;
   slug: string;
   excerpt: string;
+  thumbnail: string | null;
   content: JSONContent;
   status: "draft" | "published";
   visibility: "public" | "hidden";

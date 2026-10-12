@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, BookOpen, LogOut } from "lucide-react";
+import { getProviderAccounts } from "@/lib/blog/auth";
+import { AccountConnections } from "@/components/blog/AccountConnections";
 import { getSignedInUser } from "@/lib/blog/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function AccountPage() {
   const user = await getSignedInUser();
-  if (!user) redirect(`/admin/login?returnTo=${encodeURIComponent("/blog/account")}`);
+  if (!user) redirect(`/login?returnTo=${encodeURIComponent("/blog/account")}`);
+  const accounts = await getProviderAccounts();
 
   return <main className="min-h-screen bg-background px-6 pb-20 pt-10 text-foreground">
     <div className="mx-auto max-w-3xl">
@@ -19,6 +22,7 @@ export default async function AccountPage() {
           {user.image ? <img src={user.image} alt="" className="h-14 w-14 rounded-full border border-border object-cover" /> : <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary"><BookOpen /></div>}
           <div><p className="font-medium">{user.name}</p><p className="text-sm text-muted-foreground">{user.email}{user.emailVerified ? " · verified" : " · unverified"}</p></div>
         </div>
+        <AccountConnections accounts={accounts} providers={{ google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) }} />
         <section className="mt-8 border-t border-border pt-6">
           <h2 className="font-mono text-lg font-semibold">Purchases &amp; access</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">A place for future paid article access and purchases. No payments or paid access are enabled yet.</p>

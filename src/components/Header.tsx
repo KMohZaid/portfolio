@@ -23,7 +23,7 @@ export const Header = ({ activeSection, onNavigate }: HeaderProps) => {
   useEffect(() => { fetch("/api/auth/session", { cache: "no-store" }).then((response) => response.json()).then((data) => setAuthState({ authenticated: Boolean(data.authenticated), signedIn: Boolean(data.signedIn) })).catch(() => setAuthState({ authenticated: false, signedIn: false })); }, []);
   const pathname = usePathname();
   const isHomePage = pathname === "/";
-  const signInPath = `/admin/login?returnTo=${encodeURIComponent(pathname || "/blog")}`;
+  const signInPath = `/login?returnTo=${encodeURIComponent(pathname || "/blog")}`;
   const links = [...navItems, ...(authState.signedIn ? [{ id: "account", label: "Account", icon: User, isSection: false, path: "/blog/account" }] : [{ id: "signin", label: "Sign in", icon: LogIn, isSection: false, path: signInPath }]), ...(authState.authenticated ? [{ id: "admin", label: "Admin", icon: LockKeyhole, isSection: false, path: "/admin" }] : [])];
   const handleNavClick = (item: (typeof navItems)[number]) => {
     if (item.isSection && onNavigate && isHomePage) { onNavigate(item.id); setIsMobileMenuOpen(false); }

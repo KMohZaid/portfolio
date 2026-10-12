@@ -14,6 +14,14 @@ export async function getSignedInUser() {
   }
 }
 
+export async function getProviderAccounts() {
+  try {
+    return await auth.api.listUserAccounts({ headers: await headers() });
+  } catch {
+    return [];
+  }
+}
+
 export async function getAdminEmail(): Promise<string | null> {
   const user = await getSignedInUser();
   const email = user?.email?.trim().toLowerCase();

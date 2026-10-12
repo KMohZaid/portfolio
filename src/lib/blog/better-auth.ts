@@ -7,6 +7,7 @@ import { Pool } from "pg";
 
 const connectionString = process.env.DATABASE_URL_POOLED || process.env.DATABASE_URL;
 const authUrl = process.env.BETTER_AUTH_URL || process.env.APP_URL || "http://localhost:3000";
+const allowedAuthHosts = (process.env.BETTER_AUTH_ALLOWED_HOSTS || "").split(",").map((host) => host.trim()).filter(Boolean);
 const authSecret = process.env.AUTH_SECRET;
 if (process.env.NODE_ENV === "production" && (!authSecret || authSecret.length < 32)) {
   throw new Error("Set AUTH_SECRET to a random value of at least 32 characters.");
@@ -45,12 +46,12 @@ export const configuredProviders = {
 
 export const auth = betterAuth({
   ...(database ? { database } : {}),
-  baseURL: authUrl,
+  baseURL: allowedAuthHosts.length ? { allowedHosts: allowedAuthHosts, fallback: authUrl, protocol: "auto" } : authUrl,
   basePath: "/api/auth",
   trustedOrigins,
   secret: authSecret,
   socialProviders,
-  account: { accountLinking: { enabled: false, trustedProviders: ["google", "github"] } },
+  account: { accountLinking: { enabled: true, disableImplicitLinking: true, requireLocalEmailVerified: true, allowDifferentEmails: false, trustedProviders: ["google", "github"] } },
   emailVerification: { autoSignInAfterVerification: true },
   plugins: [dash({ apiKey: process.env.BETTER_AUTH_API_KEY }), ...(customOidcProvider ? [genericOAuth({ config: [customOidcProvider] })] : [])],
 });

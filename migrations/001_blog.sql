@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   title text NOT NULL,
   slug text NOT NULL UNIQUE,
   excerpt text NOT NULL DEFAULT '',
+  thumbnail text,
   content jsonb NOT NULL DEFAULT '{"type":"doc","content":[]}'::jsonb,
   status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
   visibility text NOT NULL DEFAULT 'public' CHECK (visibility IN ('public', 'hidden')),
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
   published_at timestamptz
 );
 ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS visibility text NOT NULL DEFAULT 'public';
+ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS thumbnail text;
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'blog_posts_visibility_check' AND conrelid = 'blog_posts'::regclass) THEN
