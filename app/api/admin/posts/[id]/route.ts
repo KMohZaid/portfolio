@@ -14,7 +14,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (!old) return NextResponse.json({ error: "Post not found" }, { status: 404 });
     if (await slugInUse(parsed.data.slug, id)) return NextResponse.json({ error: "That slug is already in use." }, { status: 409 });
     const now = new Date().toISOString();
-    const post = await savePost({ ...parsed.data, content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.status === "published" ? old.publishedAt ?? now : undefined }, id);
+    const post = await savePost({ ...parsed.data, visibility: parsed.data.status === "published" ? parsed.data.visibility : "hidden", content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.status === "published" ? old.publishedAt ?? now : undefined }, id);
     return NextResponse.json({ post });
   } catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to update post." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }

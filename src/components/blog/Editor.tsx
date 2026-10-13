@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Domternal, useCurrentEditor } from "@domternal/react";
 import { StarterKit, BubbleMenu, type JSONContent } from "@domternal/core";
 import { CodeBlockLowlight } from "@domternal/extension-code-block-lowlight";
@@ -38,23 +38,30 @@ function ImageUploader({ uploadImages }: { uploadImages: boolean }) {
 export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
   const [mode, setMode] = useState<Mode>("notion");
   const [document, setDocument] = useState(initialContent);
-  const extensions = useMemo(() => mode === "notion" ? notionExtensions : classicExtensions, [mode]);
+  const [editorTheme, setEditorTheme] = useState<"dark" | "light">("dark");
+  const extensions = mode === "notion" ? notionExtensions : classicExtensions;
 
   function updateDocument(content: JSONContent) {
     setDocument(content);
     onChange(content);
   }
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
+    <section className={`overflow-hidden rounded-xl border border-border bg-card ${editorTheme === "dark" ? "dm-theme-dark" : "dm-theme-light"}`}>
       <DomternalTheme />
       <div className="flex items-center justify-between gap-3 border-b border-border px-3 py-2">
         <p className="text-sm font-medium">Domternal editor <span className="text-xs text-muted-foreground">MIT</span></p>
-        <div aria-label="Editor mode" className="flex rounded-lg bg-muted/60 p-1 text-xs">
-          <button type="button" aria-pressed={mode === "classic"} onClick={() => setMode("classic")} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${mode === "classic" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><Type size={14} /> Normal</button>
-          <button type="button" aria-pressed={mode === "notion"} onClick={() => setMode("notion")} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${mode === "notion" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}><Blocks size={14} /> Notion style</button>
+        <div className="flex items-center gap-2">
+          <div aria-label="Editor appearance" className="flex rounded-lg bg-muted/60 p-1 text-xs">
+            <button type="button" aria-pressed={editorTheme === "dark"} onClick={() => setEditorTheme("dark")} className={`rounded-md px-2.5 py-1.5 ${editorTheme === "dark" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Dark</button>
+            <button type="button" aria-pressed={editorTheme === "light"} onClick={() => setEditorTheme("light")} className={`rounded-md px-2.5 py-1.5 ${editorTheme === "light" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>Light</button>
+          </div>
+          <div aria-label="Editor mode" className="flex rounded-lg bg-muted/60 p-1 text-xs">
+            <button type="button" aria-pressed={mode === "classic"} onClick={() => setMode("classic")} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${mode === "classic" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Type size={14} /> Normal</button>
+            <button type="button" aria-pressed={mode === "notion"} onClick={() => setMode("notion")} className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 ${mode === "notion" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}><Blocks size={14} /> Notion style</button>
+          </div>
         </div>
       </div>
-      <Domternal key={mode} extensions={extensions} content={document} outputFormat="json" preset={mode === "notion" ? "notion" : undefined} immediatelyRender={false} onUpdate={({ editor }) => updateDocument(editor.getJSON() as JSONContent)}>
+      <Domternal extensions={extensions} content={document} outputFormat="json" preset={mode === "notion" ? "notion" : undefined} immediatelyRender={false} onUpdate={({ editor }) => updateDocument(editor.getJSON() as JSONContent)}>
         <Domternal.Toolbar />
         <Domternal.Content />
         <Domternal.BubbleMenu />

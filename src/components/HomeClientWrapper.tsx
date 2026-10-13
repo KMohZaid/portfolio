@@ -1,13 +1,14 @@
 "use client";
 
 import { type ReactNode, useEffect, useState } from "react";
-import { Header } from "./Header";
+import { HeaderClient } from "./HeaderClient";
 
 interface HomeClientWrapperProps {
 	children: ReactNode;
+	initialAuthState: { authenticated: boolean; signedIn: boolean };
 }
 
-export function HomeClientWrapper({ children }: HomeClientWrapperProps) {
+export function HomeClientWrapper({ children, initialAuthState }: HomeClientWrapperProps) {
 	const [activeSection, setActiveSection] = useState("home");
 
 	useEffect(() => {
@@ -55,7 +56,7 @@ export function HomeClientWrapper({ children }: HomeClientWrapperProps) {
 
 	return (
 		<>
-			<Header activeSection={activeSection} onNavigate={handleNavigate} />
+			<HeaderClient activeSection={activeSection} onNavigate={handleNavigate} initialAuthState={initialAuthState} />
 			{children}
 		</>
 	);

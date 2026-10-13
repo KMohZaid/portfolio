@@ -1,5 +1,3 @@
-"use client";
-
 import { ArrowLeft, FolderGit2 } from "lucide-react";
 import Link from "next/link";
 import { GridBackground } from "@/components/GridBackground";
