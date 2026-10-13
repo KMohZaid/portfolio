@@ -9,8 +9,8 @@ import { authClient } from "@/lib/blog/auth-client";
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const requestedReturnTo = searchParams.get("returnTo") || "/blog/account";
-  let returnTo = "/blog/account";
+  const requestedReturnTo = searchParams.get("returnTo") || "/account";
+  let returnTo = "/account";
   try {
     const destination = new URL(requestedReturnTo, window.location.origin);
     if (destination.origin === window.location.origin) returnTo = `${destination.pathname}${destination.search}${destination.hash}`;
@@ -19,8 +19,8 @@ function LoginForm() {
   const [error, setError] = useState("");
   const [providers, setProviders] = useState<{ google: boolean; github: boolean; custom: { id: string; name: string } | null } | null>(null);
   const callbackError = searchParams.get("error");
-  const callbackErrorMessage = callbackError === "account_not_linked"
-    ? "An account with this email already uses another sign-in provider. Sign in with that provider first, then link this one from your Account page."
+  const callbackErrorMessage = callbackError === "account_not_linked" || callbackError === "unable_to_link_account" || callbackError === "email_does_not_match" || callbackError === "account_already_linked_to_different_user"
+    ? "This email already belongs to an account using another sign-in provider. Sign in with that provider first, then link GitHub or Google from your Account page."
     : callbackError === "email_not_verified"
       ? "GitHub did not confirm that this email address is verified. Verify it in GitHub settings and try again."
       : callbackError === "email_not_found"

@@ -265,8 +265,14 @@
   .ProseMirror blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
   .ProseMirror pre { @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm; }
   .ProseMirror img { @apply max-h-96 rounded-lg; }
-  .dm-editor { @apply min-h-80 rounded-b-xl border-0 bg-card text-foreground; --dm-color-text: hsl(var(--foreground)); --dm-color-surface: hsl(var(--card)); --dm-color-border: hsl(var(--border)); --dm-color-primary: hsl(var(--primary)); }
+  .dm-editor { @apply min-h-80 rounded-b-xl border-0 bg-card text-foreground; --dm-bg: hsl(var(--card)); --dm-text: hsl(var(--foreground)); --dm-muted: hsl(var(--muted-foreground)); --dm-surface: hsl(var(--muted)); --dm-border-color: hsl(var(--border)); --dm-hover: hsl(var(--muted)); --dm-active: hsl(var(--primary) / .2); --dm-accent: hsl(var(--primary)); --dm-accent-hover: hsl(var(--primary)); --dm-accent-surface: hsl(var(--primary) / .15); --dm-code-surface: hsl(var(--muted)); --dm-code-color: hsl(var(--foreground)); --dm-code-bg: hsl(var(--muted)); --dm-code-text: hsl(var(--foreground)); --dm-code-block-bg: hsl(var(--muted)); --dm-code-block-text: hsl(var(--foreground)); --dm-syntax-keyword: hsl(var(--primary)); --dm-syntax-entity: #c4b5fd; --dm-syntax-constant: #67e8f9; --dm-syntax-string: #86efac; --dm-syntax-variable: #fdba74; --dm-syntax-comment: hsl(var(--muted-foreground)); --dm-syntax-tag: #f9a8d4; --dm-block-bg-gray: hsl(var(--muted)); --dm-block-selected-halo: hsl(var(--primary) / .25); --dm-block-context-active-bg: hsl(var(--primary) / .15); }
   .dm-editor :where(.dm-toolbar, .dm-bubble-menu, .dm-floating-menu, .dm-block-handle, .dm-block-context-menu) { @apply border-border bg-card text-foreground; }
+  .dm-editor code .hljs-keyword, .dm-editor code .hljs-selector-tag, .dm-editor code .hljs-literal { @apply text-primary; }
+  .dm-editor code .hljs-string, .dm-editor code .hljs-attr { @apply text-emerald-400; }
+  .dm-editor code .hljs-comment { @apply text-muted-foreground italic; }
+  .dm-editor code .hljs-number, .dm-editor code .hljs-built_in { @apply text-amber-400; }
+  .dm-editor [contenteditable="true"] pre { @apply border border-border bg-muted text-foreground; }
+  .dm-editor [contenteditable="true"] pre code { @apply bg-transparent p-0; }
   .dm-editor [contenteditable="true"] { @apply min-h-64 px-5 py-4 text-foreground outline-none; }
   .dm-editor [contenteditable="true"] > * + * { @apply mt-4; }
   .dm-editor [contenteditable="true"] h1, .dm-editor [contenteditable="true"] h2, .dm-editor [contenteditable="true"] h3 { @apply font-mono font-bold; }

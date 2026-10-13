@@ -28,7 +28,7 @@ export default async function AdminPage() {
             <p className="mt-2 text-muted-foreground">Manage drafts, published or hidden posts, and your upload index.</p>
           </div>
           <div className="flex gap-3">
-            <Link href="/blog/account" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:border-primary"><UserRound size={16} /> Account</Link>
+            <Link href="/account" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:border-primary"><UserRound size={16} /> Account</Link>
             <Link href="/blog" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:border-primary"><ExternalLink size={16} /> View blog</Link>
             <Link href="/admin/new" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"><FilePlus2 size={16} /> New post</Link>
           </div>
@@ -44,7 +44,7 @@ export default async function AdminPage() {
                     <div className="flex flex-wrap items-center gap-2">
                       {post.thumbnail && <img src={post.thumbnail} alt="" className="h-12 w-16 rounded-md border border-border object-cover" />}
                       <div className="min-w-0"><h3 className="truncate font-medium">{post.title}</h3>
-                      <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs ${post.status === "published" && post.visibility === "public" ? "bg-terminal-green/15 text-terminal-green" : "bg-muted text-muted-foreground"}`}>{post.status === "published" && post.visibility === "hidden" ? "hidden" : post.status}</span></div>
+                      {post.status === "draft" ? <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">draft</span> : post.visibility === "hidden" ? <span className="mt-1 inline-flex rounded-full bg-red-500/15 px-2 py-0.5 text-xs text-red-400">hidden</span> : null}</div>
                     </div>
                     <p className="mt-1 truncate font-mono text-xs text-muted-foreground">/blog/{post.slug} · updated {new Date(post.updatedAt).toLocaleDateString()}</p>
                   </div>

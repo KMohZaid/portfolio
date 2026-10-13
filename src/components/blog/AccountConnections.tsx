@@ -15,7 +15,7 @@ export function AccountConnections({ accounts, providers }: { accounts: Account[
     setBusy(provider);
     setError("");
     try {
-      const result = await authClient.linkSocial({ provider, callbackURL: "/blog/account" });
+      const result = await authClient.linkSocial({ provider, callbackURL: "/account" });
       if (result.error) throw new Error(result.error.message || `Could not link ${provider}.`);
       if (result.data?.url) window.location.assign(result.data.url);
     } catch (cause) {

@@ -62,7 +62,7 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
 
 export async function savePost(input: PostInput & Pick<BlogPost, "createdAt" | "updatedAt"> & { publishedAt?: string }, id?: string): Promise<BlogPost> {
   if (id && isSampleId(id)) throw new Error("Bundled sample posts cannot be edited");
-  const visibility = input.visibility ?? "public";
+  const visibility = input.status === "published" ? input.visibility ?? "public" : "hidden";
   const result = id
     ? await query<PostRow>(`UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, thumbnail=$4, content=$5::jsonb, status=$6, visibility=$7, updated_at=$8, published_at=$9 WHERE id=$10 RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.thumbnail, JSON.stringify(input.content), input.status, visibility, input.updatedAt, input.publishedAt ?? null, id])
     : await query<PostRow>(`INSERT INTO blog_posts (title,slug,excerpt,thumbnail,content,status,visibility,created_at,updated_at,published_at) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$8,$9) RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.thumbnail, JSON.stringify(input.content), input.status, visibility, input.createdAt, input.publishedAt ?? null]);
