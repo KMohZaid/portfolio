@@ -4,12 +4,17 @@ import { useState } from "react";
 import { Github, Link2, Unlink } from "lucide-react";
 import { authClient } from "@/lib/blog/auth-client";
 
-type Account = { id: string; providerId: string };
+type Account = { id: string; providerId: string; createdAt?: string | Date };
 
 export function AccountConnections({ accounts, providers, initialError }: { accounts: Account[]; providers: { google: boolean; github: boolean }; initialError?: string }) {
   const [linked, setLinked] = useState(accounts);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState(initialError ?? "");
+  const primaryProvider = [...accounts].sort((a, b) => {
+    const aDate = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bDate = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return aDate - bDate;
+  })[0]?.providerId;
 
   async function link(provider: "google" | "github") {
     setBusy(provider);
@@ -47,7 +52,7 @@ export function AccountConnections({ accounts, providers, initialError }: { acco
         if (!providers[provider] && !account) return null;
         return <div key={provider} className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3">
           <div className="flex items-center gap-2 text-sm font-medium">{provider === "github" ? <Github size={18} /> : <GoogleMark />}<span>{provider === "github" ? "GitHub" : "Google"}</span></div>
-          {account ? <button type="button" disabled={Boolean(busy)} onClick={() => void unlink(account.id)} className="inline-flex items-center gap-2 rounded border border-border px-3 py-1.5 text-xs hover:border-destructive disabled:opacity-50"><Unlink size={14} />{busy === account.id ? "Unlinking…" : "Unlink"}</button> : <button type="button" disabled={Boolean(busy)} onClick={() => void link(provider)} className="inline-flex items-center gap-2 rounded border border-border px-3 py-1.5 text-xs hover:border-primary disabled:opacity-50"><Link2 size={14} />{busy === provider ? "Connecting…" : `Link ${provider === "github" ? "GitHub" : "Google"}`}</button>}
+          {account ? account.providerId === primaryProvider ? <span className="rounded border border-border px-3 py-1.5 text-xs text-muted-foreground">Primary sign-in · cannot unlink</span> : <button type="button" disabled={Boolean(busy)} onClick={() => void unlink(account.id)} className="inline-flex items-center gap-2 rounded border border-border px-3 py-1.5 text-xs hover:border-destructive disabled:opacity-50"><Unlink size={14} />{busy === account.id ? "Unlinking…" : "Unlink"}</button> : <button type="button" disabled={Boolean(busy)} onClick={() => void link(provider)} className="inline-flex items-center gap-2 rounded border border-border px-3 py-1.5 text-xs hover:border-primary disabled:opacity-50"><Link2 size={14} />{busy === provider ? "Connecting…" : `Link ${provider === "github" ? "GitHub" : "Google"}`}</button>}
         </div>;
       })}
     </div>
