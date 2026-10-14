@@ -15,8 +15,12 @@ export const postSchema = z.object({
   title: z.string().trim().min(1).max(180),
   slug: z.string().trim().min(1).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   excerpt: z.string().trim().max(500).default(""),
+  tags: z.array(z.string().trim().toLowerCase().min(1).max(40).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)).max(12).default([]),
+  publishedAt: z.string().datetime({ offset: true }).nullable().optional(),
+  publishDateMode: z.enum(["preserve", "now", "custom"]).optional().default("preserve"),
   thumbnail: z.union([safeUrl, z.literal("")]).optional().transform((value) => value || null).default(null),
   content: z.object({ type: z.literal("doc"), content: z.array(contentNodeSchema).max(5000) }).passthrough(),
   status: z.enum(["draft", "published"]),
+  unpublish: z.boolean().optional().default(false),
   visibility: z.enum(["public", "hidden"]).default("public"),
 });

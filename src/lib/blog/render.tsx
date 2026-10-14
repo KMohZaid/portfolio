@@ -4,8 +4,8 @@ import { createLowlight, common } from "lowlight";
 
 const highlightCode = createCodeHighlighter(createLowlight(common));
 const supportedVideoHosts = new Set(["www.youtube-nocookie.com", "player.vimeo.com"]);
-const highlightedMarkup = /<span class="hljs-[a-z0-9_-]+">|<\/span>/g;
-const highlightTag = /^<span class="(hljs-[a-z0-9_-]+)">$/;
+const highlightedMarkup = /<span class="hljs-[a-z0-9_ -]+">|<\/span>/g;
+const highlightTag = /^<span class="(hljs-[a-z0-9_ -]+)">$/;
 
 function videoEmbedUrl(value: unknown) {
   if (typeof value !== "string") return undefined;

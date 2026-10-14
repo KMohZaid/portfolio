@@ -33,7 +33,7 @@ export const VideoEmbed = Node.create({
   atom: true,
   addAttributes() { return { src: { default: "" }, title: { default: "" } }; },
   parseHTML() { return [{ tag: "div[data-video-embed]", getAttrs: (element) => ({ src: (element as HTMLElement).getAttribute("data-src") ?? "", title: (element as HTMLElement).getAttribute("data-title") ?? "" }) }]; },
-  renderHTML({ node }) { return ["div", { "data-video-embed": "", "data-src": node.attrs.src, "data-title": node.attrs.title, class: "video-embed-placeholder" }, "Video embed (preview on published post)"]; },
+  renderHTML({ node }) { return ["div", { "data-video-embed": "", "data-src": node.attrs.src, "data-title": node.attrs.title, class: "video-embed-preview" }, ["iframe", { src: node.attrs.src, title: node.attrs.title || "Embedded video", loading: "lazy", allow: "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share", referrerpolicy: "strict-origin-when-cross-origin", allowfullscreen: "true" }]]; },
 });
 
 export function VideoEmbedInserter() {

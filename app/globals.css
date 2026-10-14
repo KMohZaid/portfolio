@@ -249,8 +249,15 @@
   .blog-prose pre .hljs-string, .blog-prose pre .hljs-attr { @apply text-emerald-500; }
   .blog-prose pre .hljs-comment { @apply text-muted-foreground italic; }
   .blog-prose pre .hljs-number, .blog-prose pre .hljs-built_in { @apply text-amber-500; }
+  .blog-prose pre .hljs-title, .blog-prose pre .hljs-function { @apply text-sky-400; }
+  .blog-prose pre .hljs-type, .blog-prose pre .hljs-class { @apply text-violet-400; }
+  .blog-prose pre .hljs-variable, .blog-prose pre .hljs-params, .blog-prose pre .hljs-property { @apply text-rose-400; }
+  .blog-prose pre .hljs-meta, .blog-prose pre .hljs-operator { @apply text-cyan-400; }
+  .blog-prose pre .hljs-punctuation { @apply text-foreground/70; }
   .blog-video { @apply aspect-video overflow-hidden rounded-xl border border-border bg-card; }
   .blog-video iframe { @apply h-full w-full; }
+  .video-embed-preview { @apply my-5 aspect-video overflow-hidden rounded-xl border border-border bg-card; }
+  .video-embed-preview iframe { @apply h-full w-full; }
   .blog-prose a { @apply text-primary underline underline-offset-4; }
   .blog-prose img { @apply mx-auto max-h-[38rem] rounded-xl object-contain; }
   .blog-prose figure { @apply my-8; }
@@ -265,7 +272,9 @@
   .ProseMirror blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
   .ProseMirror pre { @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm; }
   .ProseMirror img { @apply max-h-96 rounded-lg; }
-  .dm-editor { @apply min-h-80 rounded-b-xl border-0 bg-card text-foreground; --dm-bg: hsl(var(--card)); --dm-text: hsl(var(--foreground)); --dm-muted: hsl(var(--muted-foreground)); --dm-surface: hsl(var(--muted)); --dm-border-color: hsl(var(--border)); --dm-hover: hsl(var(--muted)); --dm-active: hsl(var(--primary) / .2); --dm-accent: hsl(var(--primary)); --dm-accent-hover: hsl(var(--primary)); --dm-accent-surface: hsl(var(--primary) / .15); --dm-code-surface: hsl(var(--muted)); --dm-code-color: hsl(var(--foreground)); --dm-code-bg: hsl(var(--muted)); --dm-code-text: hsl(var(--foreground)); --dm-code-block-bg: hsl(var(--muted)); --dm-code-block-text: hsl(var(--foreground)); --dm-syntax-keyword: hsl(var(--primary)); --dm-syntax-entity: #c4b5fd; --dm-syntax-constant: #67e8f9; --dm-syntax-string: #86efac; --dm-syntax-variable: #fdba74; --dm-syntax-comment: hsl(var(--muted-foreground)); --dm-syntax-tag: #f9a8d4; --dm-block-bg-gray: hsl(var(--muted)); --dm-block-selected-halo: hsl(var(--primary) / .25); --dm-block-context-active-bg: hsl(var(--primary) / .15); }
+  .dm-theme-light { --background: 240 10% 96%; --foreground: 240 10% 10%; --card: 240 10% 100%; --card-foreground: 240 10% 10%; --muted: 240 8% 88%; --muted-foreground: 240 5% 40%; --border: 240 8% 82%; }
+  .dm-theme-dark { --background: 0 0% 4%; --foreground: 0 0% 90%; --card: 0 0% 6%; --card-foreground: 0 0% 90%; --muted: 0 0% 15%; --muted-foreground: 0 0% 75%; --border: 0 0% 15%; }
+  .dm-theme-light .dm-editor, .dm-theme-dark .dm-editor { @apply min-h-80 rounded-b-xl border-0 bg-card text-foreground; --dm-bg: hsl(var(--card)); --dm-text: hsl(var(--foreground)); --dm-muted: hsl(var(--muted-foreground)); --dm-surface: hsl(var(--muted)); --dm-border-color: hsl(var(--border)); --dm-hover: hsl(var(--muted)); --dm-active: hsl(var(--primary) / .2); --dm-accent: hsl(var(--primary)); --dm-accent-hover: hsl(var(--primary)); --dm-accent-surface: hsl(var(--primary) / .15); --dm-code-surface: hsl(var(--muted)); --dm-code-color: hsl(var(--foreground)); --dm-code-bg: hsl(var(--muted)); --dm-code-text: hsl(var(--foreground)); --dm-code-block-bg: hsl(var(--muted)); --dm-code-block-text: hsl(var(--foreground)); --dm-syntax-keyword: hsl(var(--primary)); --dm-syntax-entity: #c4b5fd; --dm-syntax-constant: #67e8f9; --dm-syntax-string: #86efac; --dm-syntax-variable: #fdba74; --dm-syntax-comment: hsl(var(--muted-foreground)); --dm-syntax-tag: #f9a8d4; --dm-block-bg-gray: hsl(var(--muted)); --dm-block-selected-halo: hsl(var(--primary) / .25); --dm-block-context-active-bg: hsl(var(--primary) / .15); }
   .dm-editor :where(.dm-toolbar, .dm-bubble-menu, .dm-floating-menu, .dm-block-handle, .dm-block-context-menu) { @apply border-border bg-card text-foreground; }
   .dm-editor code .hljs-keyword, .dm-editor code .hljs-selector-tag, .dm-editor code .hljs-literal { @apply text-primary; }
   .dm-editor code .hljs-string, .dm-editor code .hljs-attr { @apply text-emerald-400; }

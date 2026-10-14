@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { JSONContent } from "@domternal/core";
 import { requireAdmin } from "@/lib/blog/auth";
-import { deletePost, getPostById, savePost, slugInUse } from "@/lib/blog/posts";
+import { deletePost, discardPostDraft, getPostById, promoteWorkingDraft, savePost, saveWorkingDraft, slugInUse } from "@/lib/blog/posts";
 import { postSchema } from "@/lib/blog/validation";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -14,12 +14,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (!old) return NextResponse.json({ error: "Post not found" }, { status: 404 });
     if (await slugInUse(parsed.data.slug, id)) return NextResponse.json({ error: "That slug is already in use." }, { status: 409 });
     const now = new Date().toISOString();
-    const post = await savePost({ ...parsed.data, visibility: parsed.data.status === "published" ? parsed.data.visibility : "hidden", content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.status === "published" ? old.publishedAt ?? now : undefined }, id);
+    if (old.status === "published" && parsed.data.status === "draft" && !parsed.data.unpublish) {
+      const post = await saveWorkingDraft(id, { ...parsed.data, content: parsed.data.content as JSONContent, updatedAt: now });
+      return NextResponse.json({ post, draft: true });
+    }
+    if (old.status === "published" && parsed.data.unpublish) {
+      const post = await savePost({ ...parsed.data, status: "draft", content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: null }, id);
+      await discardPostDraft(id);
+      return NextResponse.json({ post, unpublished: true });
+    }
+    if (old.status === "published" && parsed.data.status === "published") {
+      const draft = await promoteWorkingDraft(id, { ...parsed.data, content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.publishDateMode === "now" ? now : parsed.data.publishDateMode === "custom" ? parsed.data.publishedAt ?? now : old.publishedAt ?? now });
+      if (draft) return NextResponse.json({ post: draft });
+    }
+    const post = await savePost({ ...parsed.data, content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.status === "published" ? (parsed.data.publishDateMode === "now" ? now : parsed.data.publishDateMode === "custom" ? parsed.data.publishedAt ?? now : old.publishedAt ?? now) : undefined }, id);
     return NextResponse.json({ post });
   } catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to update post." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  try { await requireAdmin(); const { id } = await params; return await deletePost(id) ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Post not found" }, { status: 404 }); }
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try { await requireAdmin(); const { id } = await params; if (new URL(request.url).searchParams.get("draft") === "true") return await discardPostDraft(id) ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Draft not found" }, { status: 404 }); return await deletePost(id) ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "Post not found" }, { status: 404 }); }
   catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to delete post." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }

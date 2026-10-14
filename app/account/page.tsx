@@ -6,10 +6,12 @@ import { AccountConnections } from "@/components/blog/AccountConnections";
 
 export const dynamic = "force-dynamic";
 
-export default async function AccountPage() {
-  const user = await getSignedInUser();
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ error?: string | string[] }> }) {
+  const [{ error: authError }, user] = await Promise.all([searchParams, getSignedInUser()]);
   if (!user) redirect(`/login?returnTo=${encodeURIComponent("/account")}`);
   const [accounts, adminEmail] = await Promise.all([getProviderAccounts(), getAdminEmail()]);
+  const errorCode = Array.isArray(authError) ? authError[0] : authError;
+  const accountError = errorCode === "email_does_not_match" ? "Could not link account: the provider email does not match your account email. Sign in to the provider with the same verified email address." : errorCode ? "Could not link this account. Please check the provider account and try again." : undefined;
 
   return <main className="min-h-screen bg-background px-6 pb-20 pt-10 text-foreground">
     <div className="mx-auto max-w-3xl">
@@ -23,7 +25,7 @@ export default async function AccountPage() {
         </div>
         {accounts.length > 0 && <div className="mt-5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground"><span>Signed in with</span>{accounts.map((account) => <span key={account.id} className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 font-medium text-foreground"><AccountProviderMark provider={account.providerId} />{providerName(account.providerId)}</span>)}</div>}
         {adminEmail && <Link href="/admin" className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"><ShieldCheck size={16} /> Admin dashboard</Link>}
-        <AccountConnections accounts={accounts} providers={{ google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) }} />
+        <AccountConnections accounts={accounts} providers={{ google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) }} initialError={accountError} />
         <section className="mt-8 border-t border-border pt-6">
           <h2 className="font-mono text-lg font-semibold">Purchases &amp; access</h2>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">A place for future paid article access and purchases. No payments or paid access are enabled yet.</p>

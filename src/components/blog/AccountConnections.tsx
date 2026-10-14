@@ -6,16 +6,16 @@ import { authClient } from "@/lib/blog/auth-client";
 
 type Account = { id: string; providerId: string };
 
-export function AccountConnections({ accounts, providers }: { accounts: Account[]; providers: { google: boolean; github: boolean } }) {
+export function AccountConnections({ accounts, providers, initialError }: { accounts: Account[]; providers: { google: boolean; github: boolean }; initialError?: string }) {
   const [linked, setLinked] = useState(accounts);
   const [busy, setBusy] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError ?? "");
 
   async function link(provider: "google" | "github") {
     setBusy(provider);
     setError("");
     try {
-      const result = await authClient.linkSocial({ provider, callbackURL: "/account" });
+      const result = await authClient.linkSocial({ provider, callbackURL: "/account", errorCallbackURL: "/account" });
       if (result.error) throw new Error(result.error.message || `Could not link ${provider}.`);
       if (result.data?.url) window.location.assign(result.data.url);
     } catch (cause) {

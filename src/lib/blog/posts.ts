@@ -10,6 +10,7 @@ type PostRow = {
   title: string;
   slug: string;
   excerpt: string;
+  tags: string[];
   thumbnail: string | null;
   content: BlogPost["content"];
   status: BlogPost["status"];
@@ -29,6 +30,7 @@ function serialize(post: PostRow): BlogPost {
     title: post.title,
     slug: post.slug,
     excerpt: post.excerpt,
+    tags: post.tags ?? [],
     thumbnail: post.thumbnail,
     content: post.content,
     status: post.status,
@@ -39,13 +41,23 @@ function serialize(post: PostRow): BlogPost {
   };
 }
 
-const columns = "id,title,slug,excerpt,thumbnail,content,status,visibility,created_at,updated_at,published_at";
+const columns = "id,title,slug,excerpt,tags,thumbnail,content,status,visibility,created_at,updated_at,published_at";
+const draftColumns = "post_id,title,slug,excerpt,tags,thumbnail,content,updated_at";
 const isSampleId = (id: string) => id.startsWith("sample-");
 
-export async function listPosts(includeDrafts = false): Promise<BlogPost[]> {
-  if (!isDatabaseConfigured()) return samplePosts.filter((post) => includeDrafts || (post.status === "published" && post.visibility === "public"));
-  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts ${includeDrafts ? "" : "WHERE status = 'published' AND visibility = 'public'"} ORDER BY published_at DESC NULLS LAST, updated_at DESC`);
+export async function listPosts(includeDrafts = false, search = "", tag = ""): Promise<BlogPost[]> {
+  if (!isDatabaseConfigured()) return samplePosts.filter((post) => (includeDrafts || (post.status === "published" && post.visibility === "public")) && (!tag || post.tags.includes(tag)) && (!search || `${post.title} ${post.excerpt} ${textContent(post.content)}`.toLowerCase().includes(search.toLowerCase())));
+  const clauses = [includeDrafts ? "TRUE" : "status = 'published' AND visibility = 'public'"];
+  const values: unknown[] = [];
+  if (tag) { values.push(tag); clauses.push(`$${values.length} = ANY(tags)`); }
+  if (search) { values.push(search); const parameter = values.length; clauses.push(`(to_tsvector('english', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content_text,'')) @@ websearch_to_tsquery('english', $${parameter}) OR title ILIKE '%' || $${parameter} || '%')`); }
+  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts WHERE ${clauses.join(" AND ")} ORDER BY published_at DESC NULLS LAST, updated_at DESC`, values);
   return rows.map(serialize);
+}
+
+function textContent(content: BlogPost["content"]): string {
+  const visit = (node: { text?: string; content?: unknown[] }): string => `${node.text ?? ""} ${(node.content ?? []).map((child) => child && typeof child === "object" ? visit(child as { text?: string; content?: unknown[] }) : "").join(" ")}`;
+  return visit(content);
 }
 
 export async function getPostBySlug(slug: string, includeDraft = false): Promise<BlogPost | null> {
@@ -60,19 +72,46 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
   return rows[0] ? serialize(rows[0]) : null;
 }
 
-export async function savePost(input: PostInput & Pick<BlogPost, "createdAt" | "updatedAt"> & { publishedAt?: string }, id?: string): Promise<BlogPost> {
+export async function savePost(input: PostInput & Pick<BlogPost, "createdAt" | "updatedAt"> & { publishedAt?: string | null; publishDateMode?: "preserve" | "now" | "custom" }, id?: string, preserveDraft = false): Promise<BlogPost> {
   if (id && isSampleId(id)) throw new Error("Bundled sample posts cannot be edited");
   const visibility = input.status === "published" ? input.visibility ?? "public" : "hidden";
+  const publishedAt = input.status !== "published" ? input.publishedAt ?? null : input.publishDateMode === "now" ? input.updatedAt : input.publishedAt ?? input.updatedAt;
+  const contentText = textContent(input.content).trim();
   const result = id
-    ? await query<PostRow>(`UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, thumbnail=$4, content=$5::jsonb, status=$6, visibility=$7, updated_at=$8, published_at=$9 WHERE id=$10 RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.thumbnail, JSON.stringify(input.content), input.status, visibility, input.updatedAt, input.publishedAt ?? null, id])
-    : await query<PostRow>(`INSERT INTO blog_posts (title,slug,excerpt,thumbnail,content,status,visibility,created_at,updated_at,published_at) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$8,$9) RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.thumbnail, JSON.stringify(input.content), input.status, visibility, input.createdAt, input.publishedAt ?? null]);
+    ? await query<PostRow>(`UPDATE blog_posts SET title=$1, slug=$2, excerpt=$3, tags=$4, thumbnail=$5, content=$6::jsonb, content_text=$7, status=$8, visibility=$9, updated_at=$10, published_at=$11 WHERE id=$12 RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.tags, input.thumbnail, JSON.stringify(input.content), contentText, input.status, visibility, input.updatedAt, publishedAt, id])
+    : await query<PostRow>(`INSERT INTO blog_posts (title,slug,excerpt,tags,thumbnail,content,content_text,status,visibility,created_at,updated_at,published_at) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7,$8,$9,$10,$10,$11) RETURNING ${columns}`, [input.title, input.slug, input.excerpt, input.tags, input.thumbnail, JSON.stringify(input.content), contentText, input.status, visibility, input.createdAt, publishedAt]);
   if (!result.rows[0]) throw new Error("Post not found");
+  if (id && input.status === "published" && !preserveDraft) await query("DELETE FROM blog_post_drafts WHERE post_id=$1", [id]);
   return serialize(result.rows[0]);
 }
 
+export async function saveWorkingDraft(id: string, input: PostInput & Pick<BlogPost, "updatedAt">) {
+  await query(`INSERT INTO blog_post_drafts (post_id,title,slug,excerpt,tags,thumbnail,content,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8) ON CONFLICT (post_id) DO UPDATE SET title=EXCLUDED.title, slug=EXCLUDED.slug, excerpt=EXCLUDED.excerpt, tags=EXCLUDED.tags, thumbnail=EXCLUDED.thumbnail, content=EXCLUDED.content, updated_at=EXCLUDED.updated_at`, [id, input.title, input.slug, input.excerpt, input.tags, input.thumbnail, JSON.stringify(input.content), input.updatedAt]);
+  return getPostById(id);
+}
+
+export async function promoteWorkingDraft(id: string, input: PostInput & Pick<BlogPost, "createdAt" | "updatedAt"> & { publishedAt?: string | null; publishDateMode?: "preserve" | "now" | "custom" }) {
+  const draft = await getPostDraft(id);
+  if (!draft) return null;
+  const post = await savePost({ ...input, status: "published", visibility: input.visibility, title: draft.title, slug: draft.slug, excerpt: draft.excerpt, tags: draft.tags, thumbnail: draft.thumbnail, content: draft.content }, id, true);
+  await query("DELETE FROM blog_post_drafts WHERE post_id=$1", [id]);
+  return post;
+}
+
+export async function getPostDraft(id: string) {
+  const { rows } = await query<{ post_id: string; title: string; slug: string; excerpt: string; tags: string[]; thumbnail: string | null; content: BlogPost["content"]; updated_at: Date | string }>(`SELECT ${draftColumns} FROM blog_post_drafts WHERE post_id=$1`, [id]);
+  return rows[0] ? { ...rows[0], updatedAt: iso(rows[0].updated_at) } : null;
+}
+
+export async function discardPostDraft(id: string) {
+  const { rowCount } = await query("DELETE FROM blog_post_drafts WHERE post_id=$1", [id]);
+  return Boolean(rowCount);
+}
+
+
 export async function slugInUse(slug: string, exceptId?: string): Promise<boolean> {
   const isUuid = Boolean(exceptId && /^[0-9a-f-]{36}$/i.test(exceptId));
-  const { rows } = await query<{ exists: boolean }>("SELECT EXISTS (SELECT 1 FROM blog_posts WHERE slug=$1 AND (NOT $2::boolean OR id <> $3::uuid)) AS exists", [slug, isUuid, isUuid ? exceptId : null]);
+  const { rows } = await query<{ exists: boolean }>("SELECT EXISTS (SELECT 1 FROM blog_posts WHERE slug=$1 AND (NOT $2::boolean OR id <> $3::uuid)) OR EXISTS (SELECT 1 FROM blog_post_drafts WHERE slug=$1 AND (NOT $2::boolean OR post_id <> $3::uuid)) AS exists", [slug, isUuid, isUuid ? exceptId : null]);
   return rows[0].exists;
 }
 

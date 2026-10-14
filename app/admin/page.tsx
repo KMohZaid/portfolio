@@ -46,7 +46,8 @@ export default async function AdminPage() {
                       <div className="min-w-0"><h3 className="truncate font-medium">{post.title}</h3>
                       {post.status === "draft" ? <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">draft</span> : post.visibility === "hidden" ? <span className="mt-1 inline-flex rounded-full bg-red-500/15 px-2 py-0.5 text-xs text-red-400">hidden</span> : null}</div>
                     </div>
-                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">/blog/{post.slug} · updated {new Date(post.updatedAt).toLocaleDateString()}</p>
+                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">/blog/{post.slug} · {post.status === "published" && post.publishedAt ? `published ${new Date(post.publishedAt).toLocaleDateString()} · ` : ""}updated {new Date(post.updatedAt).toLocaleDateString()}</p>
+                    {post.tags?.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">#{tag}</span>)}</div>}
                   </div>
                   {post.status === "published" && post.visibility === "public" && <Link href={`/blog/${post.slug}`} aria-label="View post" className="rounded p-2 text-muted-foreground hover:text-primary"><ExternalLink size={17} /></Link>}
                   <Link href={`/admin/edit/${post._id}`} aria-label="Edit post" className="rounded p-2 text-muted-foreground hover:text-primary"><Pencil size={17} /></Link>
