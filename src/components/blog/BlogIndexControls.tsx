@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CalendarDays, Clock3 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { BlogPost } from "@/lib/blog/types";
 
