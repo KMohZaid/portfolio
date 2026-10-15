@@ -20,15 +20,22 @@ async function uploadEditorImage(file: File) {
   const formData = new FormData();
   formData.append("image", file);
   const response = await fetch("/api/admin/uploads", { method: "POST", body: formData });
+  return readUploadUrl(response);
+}
+
+async function readUploadUrl(response: Response) {
   const text = await response.text();
   let result: { upload?: { url?: string }; error?: string };
-  try { result = JSON.parse(text); } catch { throw new Error("Image upload endpoint returned an invalid response. Please try again."); }
-  if (!response.ok || typeof result.upload?.url !== "string") throw new Error(result.error ?? "Image upload failed.");
+  try { result = JSON.parse(text); } catch {
+    const contentType = response.headers.get("content-type") ?? "unknown content type";
+    const hint = response.status === 413 ? "The image or request is too large." : response.status === 401 || response.status === 403 ? "Sign in with an admin account and try again." : "Check the upload endpoint and try again.";
+    throw new Error(`Image upload failed (HTTP ${response.status}, ${contentType}). ${hint}`);
+  }
+  if (!response.ok || typeof result.upload?.url !== "string") throw new Error(result.error ?? `Image upload failed (HTTP ${response.status}).`);
   return result.upload.url;
 }
 
-const classicExtensions = [StarterKit.configure({ link: { openOnClick: false }, codeBlock: false }), CodeBlockLowlight.configure({ lowlight }), VideoEmbed, BubbleMenu, Image.configure({ allowBase64: false, maxFileSize: 4_700_000, uploadHandler: uploadEditorImage })];
-const notionExtensions = [...classicExtensions, BlockHandle.configure({ nested: true }), BlockContextMenu, SlashCommand, SmartPaste, KeyboardReorder, BlockFloatingMenu.configure({ requireExplicitTrigger: true })];
+const editorExtensions = [StarterKit.configure({ link: { openOnClick: false }, codeBlock: false }), CodeBlockLowlight.configure({ lowlight }), VideoEmbed, BubbleMenu, Image.configure({ allowBase64: false, maxFileSize: 4_700_000, uploadHandler: uploadEditorImage }), BlockHandle.configure({ nested: true }), BlockContextMenu, SlashCommand, SmartPaste, KeyboardReorder, BlockFloatingMenu.configure({ requireExplicitTrigger: true })];
 
 function ImageUploader({ uploadImages }: { uploadImages: boolean }) {
   const { editor } = useCurrentEditor();
@@ -44,11 +51,8 @@ function ImageUploader({ uploadImages }: { uploadImages: boolean }) {
     const formData = new FormData(); formData.append("image", file);
     try {
       const response = await fetch("/api/admin/uploads", { method: "POST", body: formData });
-      const text = await response.text();
-      let result: { upload?: { url?: string }; error?: string };
-      try { result = JSON.parse(text); } catch { throw new Error("Image upload endpoint returned an invalid response. Please try again."); }
-      if (!response.ok || typeof result.upload?.url !== "string") throw new Error(result.error ?? "Image upload failed.");
-      editor?.chain().focus().setImage({ src: result.upload.url, alt: file.name }).run();
+      const uploadedUrl = await readUploadUrl(response);
+      editor?.chain().focus().setImage({ src: uploadedUrl, alt: file.name }).run();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Image upload failed."); }
   }} /></label>
     {error && <p role="alert" className="mt-2 text-xs text-destructive">{error}</p>}
@@ -59,7 +63,6 @@ export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
   const [mode, setMode] = useState<Mode>("notion");
   const [document, setDocument] = useState(initialContent);
   const [editorTheme, setEditorTheme] = useState<"dark" | "light">("dark");
-  const extensions = mode === "notion" ? notionExtensions : classicExtensions;
 
   return (
     <section className={`dm-theme-${editorTheme} overflow-hidden rounded-xl border border-border bg-card text-foreground`}>
@@ -77,11 +80,11 @@ export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
           </div>
         </div>
       </div>
-      <Domternal extensions={extensions} content={document} outputFormat="json" preset={mode === "notion" ? "notion" : undefined} immediatelyRender={false} onUpdate={({ editor }) => { const next = editor.getJSON() as JSONContent; setDocument(next); onChange(next); }}>
+      <Domternal extensions={editorExtensions} content={document} outputFormat="json" preset="notion" immediatelyRender={false} onUpdate={({ editor }) => { const next = editor.getJSON() as JSONContent; setDocument(next); onChange(next); }}>
         <Domternal.Toolbar />
         <Domternal.Content />
         <Domternal.BubbleMenu />
-        {mode === "notion" && <Domternal.FloatingMenu requireExplicitTrigger />}
+        <Domternal.FloatingMenu requireExplicitTrigger />
         <VideoEmbedInserter />
         <ImageUploader uploadImages={uploadImages} />
       </Domternal>
