@@ -39,21 +39,24 @@ export default async function AdminPage() {
           {error ? <p className="p-5 text-sm text-destructive">{error}</p> : posts.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">No posts yet. Create a draft or publish your first post.</div> : (
             <div className="divide-y divide-border">
               {posts.map((post) => (
-                <div key={post._id} className="flex flex-wrap items-center gap-4 px-5 py-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {post.thumbnail && <img src={post.thumbnail} alt="" className="h-12 w-16 rounded-md border border-border object-cover" />}
-                      <div className="min-w-0"><h3 className="truncate font-medium">{post.title}</h3>
-                      {post.status === "draft" ? <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">draft</span> : post.visibility === "hidden" ? <span className="mt-1 inline-flex rounded-full bg-red-500/15 px-2 py-0.5 text-xs text-red-400">hidden</span> : null}</div>
+                <article key={post._id} className="overflow-hidden border-b border-border last:border-b-0">
+                  {post.thumbnail && <img src={post.thumbnail} alt="" className="aspect-[16/7] w-full bg-muted object-cover" />}
+                  <div className="p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1"><h3 className="font-mono text-lg font-semibold text-primary">{post.title}</h3>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">{post.status === "draft" ? <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">draft</span> : post.visibility === "hidden" ? <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-xs text-red-400">hidden</span> : <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-600 dark:text-emerald-400">published</span>}</div></div>
+                      <p className="font-mono text-xs text-muted-foreground">/blog/{post.slug}</p>
                     </div>
-                    <p className="mt-1 truncate font-mono text-xs text-muted-foreground">/blog/{post.slug} · {post.status === "published" && post.publishedAt ? `published ${new Date(post.publishedAt).toLocaleDateString()} · ` : ""}updated {new Date(post.updatedAt).toLocaleDateString()}</p>
-                    {post.tags?.length > 0 && <div className="mt-1 flex flex-wrap gap-1">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">#{tag}</span>)}</div>}
+                    <p className="mt-2 text-xs text-muted-foreground">{post.status === "published" && post.publishedAt ? `Published ${new Date(post.publishedAt).toLocaleDateString()} · ` : ""}Updated {new Date(post.updatedAt).toLocaleDateString()}</p>
+                    {post.tags?.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">#{tag}</span>)}</div>}
+                    <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                      {post.status === "published" && post.visibility === "public" && <Link href={`/blog/${post.slug}`} aria-label="View post" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"><ExternalLink size={16} /> View</Link>}
+                      <Link href={`/admin/edit/${post._id}`} aria-label="Edit post" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"><Pencil size={16} /> Edit</Link>
+                      {post.status === "published" && <VisibilityToggle id={post._id!} visibility={post.visibility} />}
+                      <DeletePostButton id={post._id!} />
+                    </div>
                   </div>
-                  {post.status === "published" && post.visibility === "public" && <Link href={`/blog/${post.slug}`} aria-label="View post" className="rounded p-2 text-muted-foreground hover:text-primary"><ExternalLink size={17} /></Link>}
-                  <Link href={`/admin/edit/${post._id}`} aria-label="Edit post" className="rounded p-2 text-muted-foreground hover:text-primary"><Pencil size={17} /></Link>
-                  {post.status === "published" && <VisibilityToggle id={post._id!} visibility={post.visibility} />}
-                  <DeletePostButton id={post._id!} />
-                </div>
+                </article>
               ))}
             </div>
           )}

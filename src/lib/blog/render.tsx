@@ -4,8 +4,58 @@ import { createLowlight, common } from "lowlight";
 
 const highlightCode = createCodeHighlighter(createLowlight(common));
 const supportedVideoHosts = new Set(["www.youtube-nocookie.com", "player.vimeo.com"]);
-const highlightedMarkup = /<span class="hljs-[a-z0-9_ -]+">|<\/span>/g;
-const highlightTag = /^<span class="(hljs-[a-z0-9_ -]+)">$/;
+const highlightClasses = new Map<string, string>([
+  ["keyword", "text-primary"], ["selector-tag", "text-primary"], ["literal", "text-primary"],
+  ["string", "text-emerald-500"], ["attr", "text-emerald-500"], ["comment", "text-muted-foreground italic"],
+  ["number", "text-amber-500"], ["built_in", "text-amber-500"], ["title", "text-sky-400"], ["function", "text-sky-400"],
+  ["type", "text-violet-400"], ["class", "text-violet-400"], ["variable", "text-rose-400"], ["params", "text-rose-400"],
+  ["property", "text-rose-400"], ["meta", "text-cyan-400"], ["operator", "text-cyan-400"], ["punctuation", "text-foreground/70"],
+]);
+function slugHeading(text: string) {
+  return text.toLocaleLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
+}
+
+export type BlogHeading = { id: string; text: string; level: number };
+
+function headingText(node: JSONContent): string {
+  if (node.type === "text") return node.text ?? "";
+  return (node.content ?? []).map(headingText).join("");
+}
+
+export function getBlogHeadings(content: JSONContent): BlogHeading[] {
+  const headings: BlogHeading[] = [];
+  const used = new Map<string, number>();
+  function visit(node: JSONContent) {
+    if (node.type === "heading") {
+      const text = headingText(node).trim();
+      if (text) {
+        const base = slugHeading(text);
+        const count = (used.get(base) ?? 0) + 1;
+        used.set(base, count);
+        headings.push({ id: count === 1 ? base : `${base}-${count}`, text, level: Math.max(1, Math.min(3, Number(node.attrs?.level) || 2)) });
+      }
+    }
+    (node.content ?? []).forEach(visit);
+  }
+  visit(content);
+  return headings;
+}
+
+function HighlightedCode({ markup }: { markup: string }) {
+  const tokens = markup.split(/(<span class="hljs-[a-z0-9_ -]+">|<\/span>)/g);
+  const stack: string[] = [];
+  return <>{tokens.map((token, index) => {
+    if (token.startsWith('<span class="hljs-')) {
+      const tokenNames = token.match(/^<span class="([a-z0-9_ -]+)">$/)?.[1].split(/\s+/).map((name) => name.replace(/^hljs-/, "")) ?? [];
+      stack.push(tokenNames.map((name) => highlightClasses.get(name) ?? "").filter(Boolean).join(" "));
+      return null;
+    }
+    if (token === "</span>") { stack.pop(); return null; }
+    if (!token) return null;
+    const classes = stack.filter(Boolean).join(" ");
+    return <span key={index} className={classes || undefined}>{token}</span>;
+  })}</>;
+}
 
 function videoEmbedUrl(value: unknown) {
   if (typeof value !== "string") return undefined;
@@ -26,8 +76,8 @@ function safeHref(value: unknown) {
   } catch { return undefined; }
 }
 
-function renderNode(node: JSONContent, key: string): React.ReactNode {
-  const children = (node.content ?? []).map((child, index) => renderNode(child, `${key}-${index}`));
+function renderNode(node: JSONContent, key: string, headingCounts = new Map<string, number>()): React.ReactNode {
+  const children = (node.content ?? []).map((child, index) => renderNode(child, `${key}-${index}`, headingCounts));
   switch (node.type) {
     case "doc": return <>{children}</>;
     case "text": {
@@ -47,9 +97,14 @@ function renderNode(node: JSONContent, key: string): React.ReactNode {
     case "paragraph": return <p key={key}>{children}</p>;
     case "heading": {
       const level = Math.max(1, Math.min(3, Number(node.attrs?.level) || 2));
-      if (level === 1) return <h1 key={key}>{children}</h1>;
-      if (level === 3) return <h3 key={key}>{children}</h3>;
-      return <h2 key={key}>{children}</h2>;
+      const text = headingText(node).trim();
+      const base = slugHeading(text);
+      const count = text ? (headingCounts.get(base) ?? 0) + 1 : 0;
+      if (text) headingCounts.set(base, count);
+      const id = count > 1 ? `${base}-${count}` : base;
+      if (level === 1) return <h1 key={key} id={id}>{children}</h1>;
+      if (level === 3) return <h3 key={key} id={id}>{children}</h3>;
+      return <h2 key={key} id={id}>{children}</h2>;
     }
     case "bulletList": return <ul key={key}>{children}</ul>;
     case "orderedList": return <ol key={key}>{children}</ol>;
@@ -59,14 +114,7 @@ function renderNode(node: JSONContent, key: string): React.ReactNode {
       const code = (node.content ?? []).map((child) => child.text ?? "").join("");
       const language = typeof node.attrs?.language === "string" ? node.attrs.language : undefined;
       const highlighted = highlightCode(code, language ?? null);
-      const segments = highlighted?.split(highlightedMarkup);
-      let classStack: string[] = [];
-      return <pre key={key}><code className={language ? `language-${language}` : undefined}>{segments ? segments.map((segment, index) => {
-        const match = segment.match(highlightTag);
-        if (match) { classStack.push(match[1]); return null; }
-        if (segment === "</span>") { classStack.pop(); return null; }
-        return classStack.length ? <span key={index} className={classStack.join(" ")}>{segment}</span> : <span key={index}>{segment}</span>;
-      }) : code}</code></pre>;
+      return <pre key={key}><code className={language ? `language-${language}` : undefined}>{highlighted ? <HighlightedCode markup={highlighted} /> : code}</code></pre>;
     }
     case "videoEmbed": {
       const src = videoEmbedUrl(node.attrs?.src);
@@ -83,5 +131,5 @@ function renderNode(node: JSONContent, key: string): React.ReactNode {
 }
 
 export function BlogContent({ content }: { content: JSONContent }) {
-  return <div className="blog-prose">{renderNode(content, "root")}</div>;
+  return <div className="blog-prose">{renderNode(content, "root", new Map())}</div>;
 }

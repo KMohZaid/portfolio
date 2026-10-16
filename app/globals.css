@@ -245,15 +245,7 @@
   .blog-prose pre { @apply overflow-x-auto rounded-xl border border-border bg-card p-4 font-mono text-sm; }
   .blog-prose code { @apply rounded bg-muted px-1.5 py-0.5 font-mono text-sm; }
   .blog-prose pre code { @apply bg-transparent p-0; }
-  .blog-prose pre .hljs-keyword, .blog-prose pre .hljs-selector-tag, .blog-prose pre .hljs-literal { @apply text-primary; }
-  .blog-prose pre .hljs-string, .blog-prose pre .hljs-attr { @apply text-emerald-500; }
-  .blog-prose pre .hljs-comment { @apply text-muted-foreground italic; }
-  .blog-prose pre .hljs-number, .blog-prose pre .hljs-built_in { @apply text-amber-500; }
-  .blog-prose pre .hljs-title, .blog-prose pre .hljs-function { @apply text-sky-400; }
-  .blog-prose pre .hljs-type, .blog-prose pre .hljs-class { @apply text-violet-400; }
-  .blog-prose pre .hljs-variable, .blog-prose pre .hljs-params, .blog-prose pre .hljs-property { @apply text-rose-400; }
-  .blog-prose pre .hljs-meta, .blog-prose pre .hljs-operator { @apply text-cyan-400; }
-  .blog-prose pre .hljs-punctuation { @apply text-foreground/70; }
+  .blog-prose pre code span { @apply bg-transparent px-0 py-0; }
   .blog-video { @apply aspect-video overflow-hidden rounded-xl border border-border bg-card; }
   .blog-video iframe { @apply h-full w-full; }
   .video-embed-preview { @apply my-5 aspect-video overflow-hidden rounded-xl border border-border bg-card; }
