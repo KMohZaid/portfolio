@@ -5,7 +5,7 @@ import { Domternal, useCurrentEditor } from "@domternal/react";
 import { StarterKit, BubbleMenu, type JSONContent } from "@domternal/core";
 import { CodeBlockLowlight } from "@domternal/extension-code-block-lowlight";
 import { createLowlight, common } from "lowlight";
-import { BlockContextMenu, BlockHandle, KeyboardReorder, SlashCommand, SmartPaste, FloatingMenu as BlockFloatingMenu } from "@domternal/extension-block-controls";
+import { BlockContextMenu, BlockHandle, KeyboardReorder, SlashCommand, SmartPaste } from "@domternal/extension-block-controls";
 import { Image } from "@domternal/extension-image";
 import { ImagePlus, Blocks, Type, LoaderCircle } from "lucide-react";
 import { VideoEmbed, VideoEmbedInserter } from "./VideoEmbed";
@@ -35,7 +35,7 @@ async function readUploadUrl(response: Response) {
   return result.upload.url;
 }
 
-const editorExtensions = [StarterKit.configure({ link: { openOnClick: false }, codeBlock: false }), CodeBlockLowlight.configure({ lowlight }), VideoEmbed, BubbleMenu, Image.configure({ allowBase64: false, maxFileSize: 4_700_000, uploadHandler: uploadEditorImage }), BlockHandle.configure({ nested: true }), BlockContextMenu, SlashCommand, SmartPaste, KeyboardReorder, BlockFloatingMenu.configure({ requireExplicitTrigger: true })];
+const editorExtensions = [StarterKit.configure({ link: { openOnClick: false }, codeBlock: false }), CodeBlockLowlight.configure({ lowlight }), VideoEmbed, BubbleMenu, Image.configure({ allowBase64: false, maxFileSize: 4_700_000, uploadHandler: uploadEditorImage }), BlockHandle.configure({ nested: true }), BlockContextMenu, SlashCommand, SmartPaste, KeyboardReorder];
 
 function ImageUploader({ uploadImages }: { uploadImages: boolean }) {
   const { editor } = useCurrentEditor();
@@ -95,11 +95,11 @@ export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
           </div>
         </div>
       </div>
-      <Domternal extensions={editorExtensions} content={document} outputFormat="json" preset="notion" immediatelyRender={false} onUpdate={({ editor }) => { const next = editor.getJSON() as JSONContent; setDocument(next); onChange(next); }}>
+      <Domternal key={mode} extensions={editorExtensions} content={document} outputFormat="json" preset={mode} immediatelyRender={false} onUpdate={({ editor }) => { const next = editor.getJSON() as JSONContent; setDocument(next); onChange(next); }}>
         {mode === "classic" && <Domternal.Toolbar />}
         <Domternal.Content />
         <Domternal.BubbleMenu />
-        <Domternal.FloatingMenu requireExplicitTrigger />
+        {mode === "notion" && <Domternal.FloatingMenu requireExplicitTrigger />}
         <VideoEmbedInserter />
         <ImageUploader uploadImages={uploadImages} />
       </Domternal>
