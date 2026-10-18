@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Eye, EyeOff, ImagePlus, Save, Send } from "lucide-react";
 import { MAX_UPLOAD_BYTES } from "@/lib/blog/upload-constants";
 import { BlogEditor } from "./Editor";
+import { PaywallSettings } from "./PaywallSettings";
 import { BlogContent } from "@/lib/blog/render";
 import { slugify } from "@/lib/blog/slug";
 import type { BlogPost } from "@/lib/blog/types";
