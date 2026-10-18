@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/blog/auth";
 import { deletePost, discardPostDraft, getPostById, promoteWorkingDraft, savePost, saveWorkingDraft, slugInUse } from "@/lib/blog/posts";
 import { postSchema } from "@/lib/blog/validation";
 import { createSaveLogger } from "@/lib/blog/admin-save-logging";
+import { savePaywall } from "@/lib/blog/payments";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   let logger = createSaveLogger("update");
@@ -56,6 +57,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (old.status === "published" && parsed.data.unpublish) {
       stage = "unpublish-post";
       const post = await savePost({ ...parsed.data, status: "draft", content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: null }, id);
+      if (parsed.data.paywall) await savePaywall(id, parsed.data.paywall);
       await discardPostDraft(id);
       logger.log("operation-succeeded", { stage, slug: post.slug, status: post.status, unpublished: true });
       return NextResponse.json({ post, unpublished: true, requestId: logger.requestId });
@@ -64,12 +66,14 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       stage = "promote-working-draft";
       const draft = await promoteWorkingDraft(id, { ...parsed.data, content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.publishDateMode === "now" ? now : parsed.data.publishDateMode === "custom" ? parsed.data.publishedAt ?? now : old.publishedAt ?? now });
       if (draft) {
+        if (parsed.data.paywall) await savePaywall(id, parsed.data.paywall);
         logger.log("operation-succeeded", { stage, slug: draft.slug, status: draft.status, promotedDraft: true });
         return NextResponse.json({ post: draft, requestId: logger.requestId });
       }
     }
     stage = "persist-post";
     const post = await savePost({ ...parsed.data, content: parsed.data.content as JSONContent, createdAt: old.createdAt, updatedAt: now, publishedAt: parsed.data.status === "published" ? (parsed.data.publishDateMode === "now" ? now : parsed.data.publishDateMode === "custom" ? parsed.data.publishedAt ?? now : old.publishedAt ?? now) : undefined }, id);
+    if (parsed.data.paywall) await savePaywall(id, parsed.data.paywall);
     logger.log("operation-succeeded", { stage, slug: post.slug, status: post.status });
     return NextResponse.json({ post, requestId: logger.requestId });
   } catch (error) {

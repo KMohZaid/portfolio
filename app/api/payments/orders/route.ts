@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ orderId: result.id, amount: paywall.pricePaise, currency: "INR", keyId, name: "Portfolio Blog", description: post.title }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    const message = error instanceof Error && error.message === "Razorpay is not configured." ? error.message : "Unable to start payment.";
+    const message = error instanceof Error && error.message.startsWith("Razorpay is not configured.") ? error.message : "Unable to start payment.";
     return NextResponse.json({ error: message }, { status: 503 });
   }
 }

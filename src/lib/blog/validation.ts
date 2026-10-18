@@ -34,4 +34,11 @@ export const postSchema = z.object({
   status: z.enum(["draft", "published"]),
   unpublish: z.boolean().optional().default(false),
   visibility: z.enum(["public", "hidden"]).default("public"),
+  paywall: z.object({
+    enabled: z.boolean(),
+    pricePaise: z.number().int().safe().nonnegative(),
+    accessDurationSeconds: z.number().int().safe().positive().nullable().default(null),
+    showExcerpt: z.boolean(),
+    showThumbnail: z.boolean(),
+  }).optional(),
 });

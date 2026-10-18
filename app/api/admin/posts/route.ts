@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { JSONContent } from "@domternal/core";
 import { requireAdmin } from "@/lib/blog/auth";
 import { listPosts, savePost, slugInUse } from "@/lib/blog/posts";
+import { defaultPaywall, savePaywall } from "@/lib/blog/payments";
 import { postSchema } from "@/lib/blog/validation";
 import { createSaveLogger } from "@/lib/blog/admin-save-logging";
 
@@ -44,7 +45,10 @@ export async function POST(request: Request) {
     }
     stage = "persist-post";
     const now = new Date().toISOString();
-    const post = await savePost({ ...parsed.data, content: parsed.data.content as JSONContent, createdAt: now, updatedAt: now, publishedAt: parsed.data.status === "published" ? (parsed.data.publishDateMode === "custom" ? parsed.data.publishedAt ?? now : now) : undefined });
+    const { paywall, ...postData } = parsed.data;
+    if (paywall?.enabled && paywall.pricePaise <= 0) return NextResponse.json({ error: "Paid articles require a price greater than zero.", requestId: logger.requestId }, { status: 400 });
+    const post = await savePost({ ...postData, content: postData.content as JSONContent, createdAt: now, updatedAt: now, publishedAt: postData.status === "published" ? (postData.publishDateMode === "custom" ? postData.publishedAt ?? now : now) : undefined });
+    if (post._id) await savePaywall(post._id, paywall ?? defaultPaywall);
     logger.log("operation-succeeded", { stage, slug: post.slug, status: post.status });
     return NextResponse.json({ post, requestId: logger.requestId }, { status: 201 });
   } catch (error) {

@@ -17,6 +17,7 @@ export type BlogPost = {
   pricePaise?: number;
   showExcerpt?: boolean;
   showThumbnail?: boolean;
+  accessDurationSeconds?: number | null;
 };
 
 export type BlogUpload = {

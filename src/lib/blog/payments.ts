@@ -66,7 +66,7 @@ export function verifyCheckoutSignature(orderId: string, paymentId: string, sign
 export function razorpayCredentials() {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
-  if (!keyId || !keySecret) throw new Error("Razorpay is not configured.");
+  if (!keyId || !keySecret) throw new Error("Razorpay is not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to the test server environment, then restart the app.");
   if (!/^rzp_(test|live)_/.test(keyId)) throw new Error("Razorpay Key ID must be a Test Mode or Live Mode key.");
   return { keyId, keySecret };
 }

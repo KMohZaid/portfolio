@@ -22,6 +22,7 @@ type PostRow = {
   paywall_price_paise?: number;
   paywall_show_excerpt?: boolean;
   paywall_show_thumbnail?: boolean;
+  paywall_access_duration_seconds?: number | null;
 };
 
 function iso(value: Date | string | null) {
@@ -46,11 +47,12 @@ function serialize(post: PostRow): BlogPost {
     pricePaise: post.paywall_price_paise == null ? undefined : Number(post.paywall_price_paise),
     showExcerpt: post.paywall_show_excerpt ?? true,
     showThumbnail: post.paywall_show_thumbnail ?? true,
+    accessDurationSeconds: post.paywall_access_duration_seconds == null ? null : Number(post.paywall_access_duration_seconds),
   };
 }
 
 const columns = "id,title,slug,excerpt,tags,thumbnail,content,status,visibility,created_at,updated_at,published_at";
-const paidColumns = "coalesce(pw.enabled,false) AS is_paid,pw.price_paise AS paywall_price_paise,coalesce(pw.show_excerpt,false) AS paywall_show_excerpt,coalesce(pw.show_thumbnail,false) AS paywall_show_thumbnail";
+const paidColumns = "coalesce(pw.enabled,false) AS is_paid,pw.price_paise AS paywall_price_paise,coalesce(pw.show_excerpt,true) AS paywall_show_excerpt,coalesce(pw.show_thumbnail,true) AS paywall_show_thumbnail,pw.access_duration_seconds AS paywall_access_duration_seconds";
 function publicColumns(canSeePaidContent: boolean, includeDrafts = false) {
   if (includeDrafts) return `blog_posts.${columns.replaceAll(",", ",blog_posts.")},${paidColumns}`;
   return `blog_posts.id,blog_posts.title,blog_posts.slug,CASE WHEN coalesce(pw.enabled,false) AND NOT ${canSeePaidContent ? "TRUE" : "FALSE"} THEN CASE WHEN coalesce(pw.show_excerpt,false) THEN blog_posts.excerpt ELSE '' END ELSE blog_posts.excerpt END AS excerpt,blog_posts.tags,CASE WHEN coalesce(pw.enabled,false) AND NOT ${canSeePaidContent ? "TRUE" : "FALSE"} AND NOT coalesce(pw.show_thumbnail,false) THEN NULL ELSE blog_posts.thumbnail END AS thumbnail,CASE WHEN coalesce(pw.enabled,false) AND NOT ${canSeePaidContent ? "TRUE" : "FALSE"} THEN '{"type":"doc","content":[]}'::jsonb ELSE blog_posts.content END AS content,blog_posts.status,blog_posts.visibility,blog_posts.created_at,blog_posts.updated_at,blog_posts.published_at,${paidColumns}`;
@@ -86,7 +88,7 @@ export async function getPostById(id: string): Promise<BlogPost | null> {
   const sample = samplePosts.find((post) => post._id === id);
   if (sample) return sample;
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { rows } = await query<PostRow>(`SELECT blog_posts.${columns.replaceAll(",", ",blog_posts.")},coalesce(pw.enabled,false) AS is_paid,pw.price_paise AS paywall_price_paise,coalesce(pw.show_excerpt,false) AS paywall_show_excerpt,coalesce(pw.show_thumbnail,false) AS paywall_show_thumbnail FROM blog_posts LEFT JOIN blog_post_paywalls pw ON pw.post_id=blog_posts.id WHERE blog_posts.id = $1`, [id]);
+  const { rows } = await query<PostRow>(`SELECT blog_posts.${columns.replaceAll(",", ",blog_posts.")},coalesce(pw.enabled,false) AS is_paid,pw.price_paise AS paywall_price_paise,coalesce(pw.show_excerpt,true) AS paywall_show_excerpt,coalesce(pw.show_thumbnail,true) AS paywall_show_thumbnail,pw.access_duration_seconds AS paywall_access_duration_seconds FROM blog_posts LEFT JOIN blog_post_paywalls pw ON pw.post_id=blog_posts.id WHERE blog_posts.id = $1`, [id]);
   return rows[0] ? serialize(rows[0]) : null;
 }
 

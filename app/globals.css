@@ -311,7 +311,10 @@
   .blog-prose figure { @apply my-8; }
   .blog-prose figcaption { @apply mt-2 text-center text-sm text-muted-foreground; }
   .blog-prose hr { @apply border-border; }
-  .blog-editor-shell { @apply relative flex min-w-0 flex-col rounded-xl border border-border bg-card shadow-sm; height: 36rem; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+  .blog-editor-shell { @apply relative flex min-w-0 max-w-full flex-col rounded-xl border border-border bg-card shadow-sm; height: 36rem; overflow-x: auto; overflow-y: auto; overscroll-behavior: contain; }
+  .blog-editor-shell .dm-editor, .blog-editor-shell .ProseMirror { min-width: 0; max-width: 100%; }
+  .blog-editor-shell pre, .blog-editor-shell .ProseMirror { overflow-wrap: anywhere; }
+  @media (max-width: 640px) { .blog-editor-shell > .dm-editor.dm-notion-mode[data-dm-editor-ui] .ProseMirror { padding-left: 2.5rem; padding-right: .75rem; } .blog-editor-shell .dm-editor.dm-notion-mode { --dm-block-handle-gutter: 2.5rem; --dm-block-handle-left: .1rem; } }
   .blog-editor-shell--small { height: 24rem; }
   .blog-editor-shell--medium { height: 36rem; }
   .blog-editor-shell--large { height: 50rem; }

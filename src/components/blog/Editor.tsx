@@ -392,11 +392,11 @@ export function BlogEditor({ initialContent, onChange, uploadImages }: Props) {
   const [editorHeight, setEditorHeight] = useState<EditorHeight>("medium");
 
   return (
-    <section className={`dm-theme-${editorTheme} text-foreground`}>
+    <section className={`dm-theme-${editorTheme} min-w-0 max-w-full overflow-hidden text-foreground`}>
       <DomternalTheme />
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">Click a block to edit · type / for commands</p>
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-3">
           <label htmlFor="blog-editor-height" className="text-xs text-muted-foreground">Editor height</label>
           <select id="blog-editor-height" value={editorHeight} onChange={(event) => setEditorHeight(event.target.value as EditorHeight)} className="rounded-md border border-border bg-background px-2 py-1.5 text-xs">
             <option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option>

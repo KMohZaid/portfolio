@@ -54,7 +54,7 @@ export default async function AdminPage() {
                     <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
                       {post.status === "published" && post.visibility === "public" && <Link href={`/blog/${post.slug}`} aria-label="View post" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"><ExternalLink size={16} /> View</Link>}
                       <Link href={`/admin/edit/${post._id}`} aria-label="Edit post" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"><Pencil size={16} /> Edit</Link>
-                      <PaywallDialogButton postId={post._id!} />
+                      <PaywallDialogButton postId={post._id!} initialSettings={{ enabled: post.isPaid ?? false, pricePaise: post.pricePaise ?? 0, accessDurationSeconds: post.accessDurationSeconds ?? null, showExcerpt: post.showExcerpt ?? true, showThumbnail: post.showThumbnail ?? true }} />
                       {post.status === "published" && <VisibilityToggle id={post._id!} visibility={post.visibility} />}
                       <DeletePostButton id={post._id!} />
                     </div>
