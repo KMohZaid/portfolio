@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff, ImagePlus, Save, Send } from "lucide-react";
+import { MAX_UPLOAD_BYTES } from "@/lib/blog/upload-constants";
 import { BlogEditor } from "./Editor";
 import { BlogContent } from "@/lib/blog/render";
 import { slugify } from "@/lib/blog/slug";
@@ -44,11 +45,13 @@ export function PostForm({ post, hasUnpublishedDraft = false }: { post?: BlogPos
   }
 
   async function uploadThumbnail(file: File) {
+    if (!file.type.startsWith("image/")) { setError("Choose an image file for the thumbnail."); return; }
+    if (file.size > MAX_UPLOAD_BYTES) { setError("Thumbnail files must be 20 MB or smaller."); return; }
     setBusy(true);
     setError("");
     try {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("file", file);
       const response = await fetch("/api/admin/uploads", { method: "POST", body: formData });
       const text = await response.text();
       let result: { upload?: { url?: string }; error?: string };
@@ -74,9 +77,9 @@ export function PostForm({ post, hasUnpublishedDraft = false }: { post?: BlogPos
       const payload = { title, slug: slug || slugify(title), excerpt, tags, thumbnail: thumbnail || null, content, status: nextStatus, unpublish: unpublish || (unpublishPost && post?.status === "published"), visibility: nextStatus === "published" && post?.status !== "published" ? "public" : visibility, publishedAt: selectedDate, publishDateMode: dateMode };
       const response = await fetch(post ? `/api/admin/posts/${post._id}` : "/api/admin/posts", { method: post ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const text = await response.text();
-      let result: { error?: string };
+      let result: { error?: string; requestId?: string };
       try { result = JSON.parse(text); } catch { throw new Error("The server returned an unexpected response while saving."); }
-      if (!response.ok) throw new Error(result.error ?? "Unable to save post.");
+      if (!response.ok) throw new Error(`${result.error ?? "Unable to save post."}${result.requestId ? ` (Reference: ${result.requestId})` : ""}`);
       if (post && nextStatus === "draft" && post.status === "published") router.refresh();
       else { router.push("/admin"); router.refresh(); }
     } catch (e) { setError(e instanceof Error ? e.message : "Unable to save post."); }

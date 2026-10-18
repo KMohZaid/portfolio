@@ -1,4 +1,5 @@
 import type { JSONContent } from "@domternal/core";
+import { AttachmentPreview } from "@/components/blog/AttachmentPreview";
 import { createCodeHighlighter } from "@domternal/extension-code-block-lowlight";
 import { createLowlight, common } from "lowlight";
 
@@ -113,8 +114,10 @@ function renderNode(node: JSONContent, key: string, headingCounts = new Map<stri
     case "codeBlock": {
       const code = (node.content ?? []).map((child) => child.text ?? "").join("");
       const language = typeof node.attrs?.language === "string" ? node.attrs.language : undefined;
-      const highlighted = highlightCode(code, language ?? null);
-      return <pre key={key}><code className={language ? `language-${language}` : undefined}>{highlighted ? <HighlightedCode markup={highlighted} /> : code}</code></pre>;
+      let highlighted: string | null = null;
+      try { highlighted = highlightCode(code, language ?? null); } catch { highlighted = null; }
+      const sanitized = highlighted?.replace(/<(?!\/?span\b)[^>]*>/gi, "") ?? null;
+      return <pre key={key}><code className={language ? `language-${language}` : undefined}>{sanitized ? <HighlightedCode markup={sanitized} /> : code}</code></pre>;
     }
     case "videoEmbed": {
       const src = videoEmbedUrl(node.attrs?.src);
@@ -124,7 +127,19 @@ function renderNode(node: JSONContent, key: string, headingCounts = new Map<stri
     case "hardBreak": return <br key={key} />;
     case "image": {
       const src = safeHref(node.attrs?.src);
-      return src ? <figure key={key}><img src={src} alt={String(node.attrs?.alt ?? "")} /><figcaption>{String(node.attrs?.title ?? "")}</figcaption></figure> : null;
+      const align = node.attrs?.align === "center" ? "mx-auto" : node.attrs?.align === "right" ? "ml-auto" : "mr-auto";
+      return src ? <figure key={key} className={align}><img src={src} alt={String(node.attrs?.alt ?? "")} /><figcaption>{String(node.attrs?.title ?? "")}</figcaption></figure> : null;
+    }
+    case "fileEmbed": {
+      const src = safeHref(node.attrs?.src);
+      const name = String(node.attrs?.name ?? "Download file");
+      const mimeType = String(node.attrs?.mimeType ?? "application/octet-stream");
+      const display = node.attrs?.display === "card" ? "inline" : ["download", "preview", "inline"].includes(String(node.attrs?.display)) ? String(node.attrs?.display) as "download" | "preview" | "inline" : "link";
+      if (!src) return null;
+      const file = { src, name, mimeType, size: typeof node.attrs?.size === "number" ? node.attrs.size : undefined };
+      if (display === "link") return <a key={key} href={src} className="file-embed-name">{name}</a>;
+      if (display === "download") return <a key={key} href={src} download={name} className="attachment-button"><span>Download {name}</span></a>;
+      return <AttachmentPreview key={key} file={file} inline={display === "inline"} />;
     }
     default: return <>{children}</>;
   }

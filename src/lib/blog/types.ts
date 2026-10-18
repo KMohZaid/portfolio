@@ -19,6 +19,7 @@ export type BlogUpload = {
   _id?: string;
   url: string;
   filename: string;
+  mimeType?: string;
   size: number;
   createdAt: string;
   removedAt?: string;

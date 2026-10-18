@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+@import "../node_modules/@eternalheart/react-file-preview/lib/index.css";
 
 @tailwind base;
 @tailwind components;
@@ -235,6 +236,7 @@
   .blog-prose { @apply text-foreground/90 leading-8; }
   .blog-prose > * + * { @apply mt-5; }
   .blog-prose h1 { @apply mt-10 font-mono text-3xl font-bold text-foreground; }
+  .blog-article-title { font-size: clamp(1.875rem, 7vw, 3rem); overflow-wrap: anywhere; }
   .blog-prose h2 { @apply mt-8 font-mono text-2xl font-bold text-foreground; }
   .blog-prose h3 { @apply mt-7 font-mono text-xl font-semibold text-foreground; }
   .blog-prose p { @apply leading-8; }
@@ -247,46 +249,88 @@
   .blog-prose pre code { @apply bg-transparent p-0; }
   .blog-prose pre code span { @apply bg-transparent px-0 py-0; }
   .blog-video { @apply aspect-video overflow-hidden rounded-xl border border-border bg-card; }
-  .blog-video iframe { @apply h-full w-full; }
+  .attachment-card { @apply my-5 flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-sm; }
+  .attachment-card-info { @apply flex min-w-0 flex-1 flex-col gap-1; }
+  .attachment-card-actions { @apply flex max-w-full flex-wrap items-center gap-2; }
+  @media (max-width: 640px) { .attachment-card { @apply items-start; } .attachment-card-info { @apply w-full flex-none; } .attachment-card-actions { @apply w-full; } .attachment-card-actions > * { @apply min-w-0 flex-1 justify-center; } }
+  .attachment-text-preview { @apply flex max-h-[36rem] overflow-auto bg-background p-4 font-mono text-sm leading-6; }
+  .attachment-text-preview pre { @apply m-0 bg-transparent p-0 leading-6; }
+  .attachment-text-line-numbers { @apply sticky left-0 mr-4 min-w-8 select-none text-right text-muted-foreground; }
+  .attachment-text-code { @apply min-w-0 flex-1 whitespace-pre; }
+  .attachment-card-info strong { @apply truncate text-sm font-semibold; }
+  .attachment-card-info span { @apply truncate text-xs text-muted-foreground; }
+  .attachment-card-actions { @apply flex flex-wrap items-center gap-2; }
+  .upload-progress { height: .5rem; appearance: none; overflow: hidden; border-radius: 9999px; background: hsl(var(--muted)); }
+  .upload-progress::-webkit-progress-bar { background: hsl(var(--muted)); }
+  .upload-progress::-webkit-progress-value { background: hsl(var(--primary)); transition: width .15s ease; }
+  .upload-progress::-moz-progress-bar { background: hsl(var(--primary)); }
+  .attachment-button { @apply inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium no-underline hover:border-primary hover:text-primary; text-decoration: none !important; }
+  .attachment-inline-preview { @apply min-w-0; }
+  .attachment-inline-content { @apply mt-0 min-w-0 overflow-hidden border-t border-border bg-background; }
+  .attachment-pdf-content { height: min(72vh, 56rem); min-height: 32rem; }
+  .attachment-preview-toolbar { @apply flex items-center justify-between gap-3 border-b border-border bg-card px-3 py-2 text-sm; }
+  .attachment-inline-content .attachment-text-preview { @apply max-h-[36rem] overflow-auto; }
+  .video-embed-node-view { @apply my-4 min-w-0 overflow-hidden rounded-xl border border-border bg-card; }
+  .video-embed-editor-view { @apply w-full; }
+  .video-embed-editor-toolbar { @apply flex items-center justify-between gap-3 border-b border-border px-3 py-2 text-sm; }
+  .video-embed-editor-toolbar button { @apply rounded-md border border-border px-2 py-1 text-xs hover:border-primary; }
+  .video-embed-editor-view iframe { @apply aspect-video w-full border-0; }
+  .video-embed-editor-url { @apply block p-3 text-xs text-muted-foreground; }
+  .video-embed-editor-url input { @apply mt-1 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground; }
+  .file-embed-name { @apply inline-flex rounded-md border border-border px-3 py-2 text-sm no-underline; text-decoration: none !important; }
+  .attachment-modal-backdrop { @apply fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 md:p-8; }
+  .attachment-modal { @apply flex h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl; }
+  .attachment-modal-header { @apply flex items-center justify-between gap-3 border-b border-border p-3 md:p-4; }
+  .attachment-modal-header > div:first-child { @apply flex min-w-0 flex-col gap-1; }
+  .attachment-modal-header strong { @apply truncate text-sm; }
+  .attachment-modal-header span { @apply truncate text-xs text-muted-foreground; }
+  .attachment-modal-content { @apply min-h-0 flex-1 overflow-auto bg-background; }
+  .attachment-modal-content iframe { @apply h-full min-h-[60vh] w-full border-0; }
+  .attachment-text-preview { @apply h-full overflow-auto p-4 font-mono text-sm leading-6; }
+  .attachment-text-preview code { @apply whitespace-pre; }
+  .blog-video iframe, .blog-video video { @apply h-full w-full; }
+  .blog-pdf { @apply overflow-hidden rounded-xl border border-border bg-card; }
+  .blog-pdf iframe { @apply h-[75vh] min-h-[32rem] w-full; }
+  .attachment-card iframe { @apply h-64 w-full; }
   .video-embed-preview { @apply my-5 aspect-video overflow-hidden rounded-xl border border-border bg-card; }
   .video-embed-preview iframe { @apply h-full w-full; }
+  .file-embed-preview { @apply my-4 overflow-hidden rounded-xl border border-border bg-card; }
+  .file-embed-preview iframe { @apply h-[32rem] w-full; }
+  .file-embed-preview .file-embed-image { @apply mx-auto max-h-96 max-w-full object-contain; }
+  .file-image-card { @apply overflow-hidden rounded-xl border border-border bg-card; }
+  .file-image-card img { @apply mx-auto max-h-[38rem] object-contain; }
+  .file-embed-preview video { @apply aspect-video w-full; }
+  .file-embed-preview a { @apply block truncate px-4 py-3 text-sm text-primary underline underline-offset-4; }
+  .file-embed-preview iframe, .file-embed-preview video { pointer-events: none; }
+  .file-embed-preview.ProseMirror-selectednode iframe, .file-embed-preview.ProseMirror-selectednode video { pointer-events: auto; }
+  .file-embed-preview.ProseMirror-selectednode { @apply ring-2 ring-primary; }
   .blog-prose a { @apply text-primary underline underline-offset-4; }
   .blog-prose img { @apply mx-auto max-h-[38rem] rounded-xl object-contain; }
   .blog-prose figure { @apply my-8; }
   .blog-prose figcaption { @apply mt-2 text-center text-sm text-muted-foreground; }
   .blog-prose hr { @apply border-border; }
-  .ProseMirror { @apply min-h-64 outline-none; }
-  .ProseMirror > * + * { @apply mt-4; }
-  .ProseMirror h1 { @apply font-mono text-3xl font-bold; }
-  .ProseMirror h2 { @apply font-mono text-2xl font-bold; }
-  .ProseMirror ul { @apply ml-6 list-disc; }
-  .ProseMirror ol { @apply ml-6 list-decimal; }
-  .ProseMirror blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
-  .ProseMirror pre { @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm; }
-  .ProseMirror img { @apply max-h-96 rounded-lg; }
+  .blog-editor-shell { @apply relative flex min-w-0 flex-col rounded-xl border border-border bg-card shadow-sm; height: 36rem; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }
+  .blog-editor-shell--small { height: 24rem; }
+  .blog-editor-shell--medium { height: 36rem; }
+  .blog-editor-shell--large { height: 50rem; }
+  .blog-editor-shell > .dm-editor.dm-notion-mode[data-dm-editor-ui] { @apply order-1 min-h-0 flex-none overflow-visible rounded-xl border-0 bg-transparent; min-height: 100% !important; --dm-notion-min-height: 0px; }
+  .blog-editor-shell > .dm-editor.dm-notion-mode[data-dm-editor-ui] .ProseMirror { min-height: 100% !important; padding: 1.5rem 1rem 1.5rem 3rem; }
+  .blog-editor-shell .dm-editor.dm-notion-mode { --dm-block-handle-gutter: 3rem; --dm-block-handle-left: .25rem; }
+  .blog-editor-shell > .media-url-panel { @apply absolute bottom-3 left-3 right-3 z-40 flex items-center gap-2 rounded-xl border border-border bg-card p-2 shadow-xl; }
+  .blog-editor-shell > .media-url-panel input { @apply min-w-0 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm; }
+  .dm-editor .ProseMirror .is-empty::before { content: attr(data-placeholder); float: left; height: 0; color: hsl(var(--muted-foreground)); pointer-events: none; }
   .dm-theme-light { --background: 240 10% 96%; --foreground: 240 10% 10%; --card: 240 10% 100%; --card-foreground: 240 10% 10%; --muted: 240 8% 88%; --muted-foreground: 240 5% 40%; --border: 240 8% 82%; }
   .dm-theme-dark { --background: 0 0% 4%; --foreground: 0 0% 90%; --card: 0 0% 6%; --card-foreground: 0 0% 90%; --muted: 0 0% 15%; --muted-foreground: 0 0% 75%; --border: 0 0% 15%; }
-  .dm-theme-light .dm-editor, .dm-theme-dark .dm-editor { @apply min-h-80 rounded-b-xl border-0 bg-card text-foreground; --dm-bg: hsl(var(--card)); --dm-text: hsl(var(--foreground)); --dm-muted: hsl(var(--muted-foreground)); --dm-surface: hsl(var(--muted)); --dm-border-color: hsl(var(--border)); --dm-hover: hsl(var(--muted)); --dm-active: hsl(var(--primary) / .2); --dm-accent: hsl(var(--primary)); --dm-accent-hover: hsl(var(--primary)); --dm-accent-surface: hsl(var(--primary) / .15); --dm-code-surface: hsl(var(--muted)); --dm-code-color: hsl(var(--foreground)); --dm-code-bg: hsl(var(--muted)); --dm-code-text: hsl(var(--foreground)); --dm-code-block-bg: hsl(var(--muted)); --dm-code-block-text: hsl(var(--foreground)); --dm-syntax-keyword: hsl(var(--primary)); --dm-syntax-entity: #c4b5fd; --dm-syntax-constant: #67e8f9; --dm-syntax-string: #86efac; --dm-syntax-variable: #fdba74; --dm-syntax-comment: hsl(var(--muted-foreground)); --dm-syntax-tag: #f9a8d4; --dm-block-bg-gray: hsl(var(--muted)); --dm-block-selected-halo: hsl(var(--primary) / .25); --dm-block-context-active-bg: hsl(var(--primary) / .15); }
-  .dm-editor :where(.dm-toolbar, .dm-bubble-menu, .dm-floating-menu, .dm-block-handle, .dm-block-context-menu) { @apply border-border bg-card text-foreground; }
+  .dm-theme-light .dm-editor.dm-notion-mode, .dm-theme-dark .dm-editor.dm-notion-mode { @apply min-h-80 rounded-none border-0 bg-transparent text-foreground; --dm-bg: hsl(var(--card)); --dm-text: hsl(var(--foreground)); --dm-muted: hsl(var(--muted-foreground)); --dm-surface: hsl(var(--muted)); --dm-border-color: hsl(var(--border)); --dm-hover: hsl(var(--muted)); --dm-active: hsl(var(--primary) / .2); --dm-accent: hsl(var(--primary)); --dm-accent-hover: hsl(var(--primary)); --dm-accent-surface: hsl(var(--primary) / .15); --dm-code-surface: hsl(var(--muted)); --dm-code-color: hsl(var(--foreground)); --dm-code-bg: hsl(var(--muted)); --dm-code-text: hsl(var(--foreground)); --dm-code-block-bg: hsl(var(--muted)); --dm-code-block-text: hsl(var(--foreground)); --dm-syntax-keyword: hsl(var(--primary)); --dm-syntax-entity: #c4b5fd; --dm-syntax-constant: #67e8f9; --dm-syntax-string: #86efac; --dm-syntax-variable: #fdba74; --dm-syntax-comment: hsl(var(--muted-foreground)); --dm-syntax-tag: #f9a8d4; --dm-block-bg-gray: hsl(var(--muted)); --dm-block-selected-halo: hsl(var(--primary) / .25); --dm-block-context-active-bg: hsl(var(--primary) / .15); }
   .dm-editor code .hljs-keyword, .dm-editor code .hljs-selector-tag, .dm-editor code .hljs-literal { @apply text-primary; }
   .dm-editor code .hljs-string, .dm-editor code .hljs-attr { @apply text-emerald-400; }
   .dm-editor code .hljs-comment { @apply text-muted-foreground italic; }
   .dm-editor code .hljs-number, .dm-editor code .hljs-built_in { @apply text-amber-400; }
   .dm-editor [contenteditable="true"] pre { @apply border border-border bg-muted text-foreground; }
   .dm-editor [contenteditable="true"] pre code { @apply bg-transparent p-0; }
-  .dm-editor [contenteditable="true"] { @apply min-h-64 px-5 py-4 text-foreground outline-none; }
-  .dm-editor [contenteditable="true"] > * + * { @apply mt-4; }
-  .dm-editor [contenteditable="true"] h1, .dm-editor [contenteditable="true"] h2, .dm-editor [contenteditable="true"] h3 { @apply font-mono font-bold; }
-  .dm-editor [contenteditable="true"] h1 { @apply text-3xl; }
-  .dm-editor [contenteditable="true"] h2 { @apply text-2xl; }
-  .dm-editor [contenteditable="true"] ul { @apply ml-6 list-disc; }
-  .dm-editor [contenteditable="true"] ol { @apply ml-6 list-decimal; }
-  .dm-editor [contenteditable="true"] blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
-  .dm-editor [contenteditable="true"] pre { @apply overflow-x-auto rounded-lg bg-muted p-4 font-mono text-sm; }
   .dm-editor [contenteditable="true"] img { @apply max-h-96 rounded-lg; }
-  .dm-editor.dm-notion-mode [contenteditable="true"] { @apply mx-auto max-w-2xl font-sans; }
-  .dm-editor.dm-notion-mode [contenteditable="true"] p { @apply my-3 leading-8; }
-  .dm-editor.dm-notion-mode [contenteditable="true"] h1, .dm-editor.dm-notion-mode [contenteditable="true"] h2 { @apply mt-8; }
+  .dm-editor :where(.dm-toolbar, .dm-bubble-menu, .dm-floating-menu, .dm-block-handle, .dm-block-context-menu, .dm-slash-command-menu) { @apply border-border bg-card text-foreground; }
+  .dm-editor.dm-notion-mode .ProseMirror { padding-inline: 1rem; }
 
   .prose-custom h1 {
     @apply text-3xl md:text-4xl font-mono font-bold text-foreground mt-8 mb-4;

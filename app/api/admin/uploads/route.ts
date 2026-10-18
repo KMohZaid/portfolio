@@ -5,7 +5,7 @@ import { addUpload, listUploads, markUploadRemoved, MAX_UPLOAD_BYTES } from "@/l
 export const runtime = "nodejs";
 
 export async function GET() {
-  try { await requireAdmin(); return NextResponse.json({ uploads: await listUploads(), maxBytes: MAX_UPLOAD_BYTES, cleanup: "Graph.org does not offer a public list/delete API; this is a local upload index." }); }
+  try { await requireAdmin(); return NextResponse.json({ uploads: await listUploads(), maxBytes: MAX_UPLOAD_BYTES, cleanup: "Unlisting removes public access through this proxy; it does not delete the Telegram message." }); }
   catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to load uploads." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }
 
@@ -13,47 +13,50 @@ export async function POST(request: Request) {
   const requestId = crypto.randomUUID();
   try {
     await requireAdmin();
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_UPLOAD_CHAT_ID;
+    if (!token || !chatId) return NextResponse.json({ error: "Telegram uploads are not configured on the server.", requestId }, { status: 503 });
     const form = await request.formData();
-    const image = form.get("image");
-    if (!(image instanceof File)) return NextResponse.json({ error: "Choose an image file." }, { status: 400 });
-    if (!image.type.startsWith("image/")) return NextResponse.json({ error: "Only image uploads are supported." }, { status: 400 });
-    if (image.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: "Image must be smaller than 4.7 MB (under Graph.org's 5 MiB cap)." }, { status: 413 });
-    if (image.type === "image/svg+xml") return NextResponse.json({ error: "SVG uploads are not supported. Use PNG, JPEG, WebP, or GIF." }, { status: 415 });
-    const providers = [
-      { name: "graph.org", endpoint: "https://graph.org/upload" },
-      { name: "telegra.ph", endpoint: "https://telegra.ph/upload" },
-    ];
-    let uploaded: { provider: string; path: string } | null = null;
-    for (const provider of providers) {
-      console.info("[blog-upload] provider attempt", { requestId, provider: provider.name, filename: image.name.slice(0, 120), bytes: image.size, contentType: image.type });
-      const body = new FormData();
-      body.append("file", image, image.name);
-      let response: Response;
-      try { response = await fetch(provider.endpoint, { method: "POST", body, signal: AbortSignal.timeout(20_000) }); }
-      catch (error) {
-        console.error("[blog-upload] provider request failed", { requestId, provider: provider.name, message: error instanceof Error ? error.message : "unknown error" });
-        continue;
-      }
-      const responseText = await response.text();
-      console.info("[blog-upload] provider response", { requestId, provider: provider.name, status: response.status, contentType: response.headers.get("content-type"), responsePreview: responseText.slice(0, 400) });
-      if (!response.ok) continue;
-      let payload: unknown;
-      try { payload = JSON.parse(responseText); } catch { continue; }
-      const path = Array.isArray(payload) && payload[0] && typeof payload[0].src === "string" ? payload[0].src : null;
-      if (path?.startsWith("/file/")) { uploaded = { provider: provider.name, path }; break; }
+    const file = form.get("file") ?? form.get("image");
+    const kind = form.get("kind");
+    if (kind !== null && !["image", "video", "file", "document"].includes(String(kind))) return NextResponse.json({ error: "Upload kind is invalid." }, { status: 400 });
+    if (!(file instanceof File)) return NextResponse.json({ error: "Choose a file to upload." }, { status: 400 });
+    if (kind === "image" && !file.type.startsWith("image/")) return NextResponse.json({ error: "Choose an image file." }, { status: 415 });
+    if (kind === "video" && !file.type.startsWith("video/")) return NextResponse.json({ error: "Choose a video file." }, { status: 415 });
+    if (file.size === 0) return NextResponse.json({ error: "The selected file is empty." }, { status: 400 });
+    if (file.size > MAX_UPLOAD_BYTES) return NextResponse.json({ error: "Files must be 20 MB or smaller." }, { status: 413 });
+
+    const body = new FormData();
+    body.set("chat_id", chatId);
+    const method = kind === "image" ? "sendPhoto" : kind === "video" ? "sendVideo" : "sendDocument";
+    body.set(method === "sendPhoto" ? "photo" : method === "sendVideo" ? "video" : "document", file, file.name || "upload");
+    console.info(`[blog-upload] telegram ${method}`, { requestId, bytes: file.size, mimeType: file.type || "application/octet-stream" });
+    const telegramResponse = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body, signal: AbortSignal.timeout(60_000) });
+    const responseText = await telegramResponse.text();
+    let telegramPayload: { ok?: boolean; description?: string; result?: { document?: { file_id?: string; file_unique_id?: string; file_size?: number; mime_type?: string; file_name?: string }; photo?: Array<{ file_id?: string; file_unique_id?: string; file_size?: number; width?: number; height?: number }>; video?: { file_id?: string; file_unique_id?: string; file_size?: number; mime_type?: string; file_name?: string } } } | null = null;
+    try { telegramPayload = JSON.parse(responseText); } catch {
+      console.error(`[blog-upload] telegram ${method} invalid response`, { requestId, status: telegramResponse.status, contentType: telegramResponse.headers.get("content-type") ?? "unknown", responseBytes: Buffer.byteLength(responseText) });
+      return NextResponse.json({ error: "Telegram returned an unexpected response while storing this file.", requestId }, { status: 502 });
     }
-    if (!uploaded) return NextResponse.json({ error: "Graph.org and Telegraph rejected the image upload. Check the upload service logs and try a different image.", requestId }, { status: 502 });
-    const url = `https://${uploaded.provider}${uploaded.path}`;
-    const upload = await addUpload({ url, filename: image.name.slice(0, 200), size: image.size, createdAt: new Date().toISOString() });
-    console.info("[blog-upload] indexed", { requestId, uploadId: upload._id, provider: uploaded.provider });
+    const mediaKind = kind === "image" || kind === "video" ? kind : "file";
+    const returnedMedia = mediaKind === "image" ? telegramPayload?.result?.photo?.at(-1) : mediaKind === "video" ? telegramPayload?.result?.video : telegramPayload?.result?.document;
+    if (!telegramResponse.ok || !telegramPayload?.ok || !returnedMedia?.file_id || !returnedMedia.file_unique_id) {
+      console.error(`[blog-upload] telegram ${method} failed`, { requestId, status: telegramResponse.status, description: telegramPayload?.description ?? "unexpected Telegram response" });
+      return NextResponse.json({ error: `Telegram rejected the upload: ${telegramPayload?.description ?? `HTTP ${telegramResponse.status}`}.`, requestId }, { status: 502 });
+    }
+
+    if (!returnedMedia?.file_id || !returnedMedia.file_unique_id) throw new Error("Telegram upload did not return a file ID.");
+    const returnedName = "file_name" in returnedMedia ? returnedMedia.file_name : undefined;
+    const upload = await addUpload({ filename: returnedName || file.name.slice(0, 200) || "download", size: returnedMedia.file_size ?? file.size, createdAt: new Date().toISOString(), telegramFileId: returnedMedia.file_id, telegramFileUniqueId: returnedMedia.file_unique_id, mimeType: ("mime_type" in returnedMedia ? returnedMedia.mime_type : undefined) || file.type || "application/octet-stream" });
+    console.info("[blog-upload] telegram indexed", { requestId, uploadId: upload._id, bytes: upload.size });
     return NextResponse.json({ upload, requestId }, { status: 201 });
   } catch (error) {
     console.error("[blog-upload] failed", { requestId, message: error instanceof Error ? error.message : "unknown error" });
-    return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to upload image. Check the database configuration and try again.", requestId }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 });
+    return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to upload file. Check the database and Telegram configuration.", requestId }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 });
   }
 }
 
 export async function DELETE(request: Request) {
-  try { await requireAdmin(); const { id } = await request.json(); return await markUploadRemoved(String(id)) ? NextResponse.json({ ok: true, note: "Removed from this site's index only. Graph.org does not expose remote file deletion." }) : NextResponse.json({ error: "Indexed upload not found" }, { status: 404 }); }
+  try { await requireAdmin(); const { id } = await request.json(); return await markUploadRemoved(String(id)) ? NextResponse.json({ ok: true, note: "Removed from public proxy access. The Telegram message remains stored." }) : NextResponse.json({ error: "Indexed upload not found" }, { status: 404 }); }
   catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to update the upload index." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }

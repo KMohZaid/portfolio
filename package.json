@@ -20,6 +20,8 @@
     "@domternal/pm": "1.3.1",
     "@domternal/react": "1.3.1",
     "@domternal/theme": "1.3.1",
+    "@embedpdf/react-pdf-viewer": "^2.15.1",
+    "@eternalheart/react-file-preview": "^1.6.10",
     "@iconify/react": "^6.0.2",
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-label": "^2.1.7",

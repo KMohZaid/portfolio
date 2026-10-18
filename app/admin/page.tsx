@@ -43,9 +43,8 @@ export default async function AdminPage() {
                   {post.thumbnail && <img src={post.thumbnail} alt="" className="aspect-[16/7] w-full bg-muted object-cover" />}
                   <div className="p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1"><h3 className="font-mono text-lg font-semibold text-primary">{post.title}</h3>
+                      <div className="min-w-0 flex-1"><p className="mb-1 break-all font-mono text-xs text-muted-foreground">/blog/{post.slug}</p><h3 className="font-mono text-lg font-semibold text-primary">{post.title}</h3>
                       <div className="mt-2 flex flex-wrap items-center gap-2">{post.status === "draft" ? <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">draft</span> : post.visibility === "hidden" ? <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-xs text-red-400">hidden</span> : <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-600 dark:text-emerald-400">published</span>}</div></div>
-                      <p className="font-mono text-xs text-muted-foreground">/blog/{post.slug}</p>
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">{post.status === "published" && post.publishedAt ? `Published ${new Date(post.publishedAt).toLocaleDateString()} · ` : ""}Updated {new Date(post.updatedAt).toLocaleDateString()}</p>
                     {post.tags?.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{post.tags.map((tag) => <span key={tag} className="rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary">#{tag}</span>)}</div>}
