@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Terminal } from "lucide-react";
 import { BlogIndexControls } from "@/components/blog/BlogIndexControls";
 import { Header } from "@/components/Header";
+import { MouseSpotlight } from "@/components/MouseSpotlight";
 import { listPosts } from "@/lib/blog/posts";
 import config from "@/config.json";
 
@@ -13,7 +14,8 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
   let posts = [];
   let databaseError = false;
   try { posts = await listPosts(); } catch { databaseError = true; }
-  return <main className="min-h-screen bg-background text-foreground">
+  return <main className="relative min-h-screen bg-transparent text-foreground">
+    <MouseSpotlight />
     <Header />
     <div className="mx-auto max-w-4xl px-6 pb-24 pt-32">
       <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><ArrowLeft size={16} /> Back to portfolio</Link>

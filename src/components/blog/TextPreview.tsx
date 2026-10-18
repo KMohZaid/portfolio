@@ -51,10 +51,12 @@ export function TextPreview({ src, filename }: { src: string; filename: string }
   if (error) return <p role="alert" className="p-5">Could not load this preview. Download the file to view it.</p>;
   if (text === null) return <p className="p-5">Loading preview…</p>;
   const lines = text.split("\n");
-  const snippet = lines.slice(0, 30).join("\n");
+  const visibleLines = lines.slice(0, 30);
+  const snippet = visibleLines.join("\n");
   const extension = filename.split(".").at(-1)?.toLowerCase() ?? "";
-  let markup: string | null = null;
-  try { markup = highlighter(snippet, languageByExtension[extension] ?? null); } catch {}
-  const safeMarkup = markup?.replace(/<(?!\/?span\b)[^>]*>/gi, "");
-  return <div className="attachment-text-preview"><pre aria-hidden="true" className="attachment-text-line-numbers">{Array.from({ length: Math.min(lines.length, 30) }, (_, index) => index + 1).join("\n")}</pre><pre className="attachment-text-code"><code>{safeMarkup ? <Highlighted markup={safeMarkup} /> : snippet}{lines.length > 30 || text.length >= 32768 ? "\n… Preview limited to the first 30 lines. Download the file to see the rest." : ""}</code></pre></div>;
+  const safeMarkup = visibleLines.map((line) => {
+    try { return highlighter(line, languageByExtension[extension] ?? null)?.replace(/<(?!\/?span\b)[^>]*>/gi, "") ?? line; }
+    catch { return line; }
+  });
+  return <div className="attachment-text-preview"><pre aria-hidden="true" className="attachment-text-line-numbers">{visibleLines.map((_, index) => <span key={index}>{index + 1}</span>)}</pre><pre className="attachment-text-code"><code>{safeMarkup.map((markup, index) => <span className="attachment-text-line" key={index}><Highlighted markup={markup} /></span>)}{lines.length > 30 || text.length >= 32768 ? <span className="attachment-text-line attachment-text-truncated">… Preview limited to the first 30 lines. Download the file to see the rest.</span> : null}</code></pre></div>;
 }

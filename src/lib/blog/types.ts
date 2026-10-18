@@ -13,6 +13,10 @@ export type BlogPost = {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  isPaid?: boolean;
+  pricePaise?: number;
+  showExcerpt?: boolean;
+  showThumbnail?: boolean;
 };
 
 export type BlogUpload = {
@@ -23,4 +27,5 @@ export type BlogUpload = {
   size: number;
   createdAt: string;
   removedAt?: string;
+  usedIn?: string[];
 };

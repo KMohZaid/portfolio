@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/blog/auth";
 import { addUpload, listUploads, markUploadRemoved, MAX_UPLOAD_BYTES } from "@/lib/blog/uploads";
+import { query } from "@/lib/blog/db";
 
 export const runtime = "nodejs";
 
-export async function GET() {
-  try { await requireAdmin(); return NextResponse.json({ uploads: await listUploads(), maxBytes: MAX_UPLOAD_BYTES, cleanup: "Unlisting removes public access through this proxy; it does not delete the Telegram message." }); }
-  catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to load uploads." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
+export async function GET(request: Request) {
+  try {
+    await requireAdmin();
+    const uploads = await listUploads();
+    const { rows } = await query<{ title: string; content: string; thumbnail: string | null }>("SELECT title, content::text AS content, thumbnail FROM blog_posts UNION ALL SELECT posts.title, drafts.content::text AS content, drafts.thumbnail FROM blog_post_drafts drafts JOIN blog_posts posts ON posts.id=drafts.post_id");
+    const references = new Map<string, string[]>();
+    for (const upload of uploads) for (const row of rows) if (row.content.includes(upload.url) || row.thumbnail === upload.url) references.set(upload.url, [...(references.get(upload.url) ?? []), row.title]);
+    const all = new URL(request.url).searchParams.get("all") === "1";
+    const annotated = uploads.map((upload) => ({ ...upload, usedIn: references.get(upload.url) ?? [] }));
+    return NextResponse.json({ uploads: all ? annotated : annotated.filter((upload) => upload.usedIn.length === 0), maxBytes: MAX_UPLOAD_BYTES, cleanup: "Unlisting removes public access through this proxy; it does not delete the Telegram message." });
+  } catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to load uploads." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }
 
 export async function POST(request: Request) {

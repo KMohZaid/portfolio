@@ -1,5 +1,4 @@
 import { Footer } from "@/components/Footer";
-import { GridBackground } from "@/components/GridBackground";
 import { HomeClientWrapper } from "@/components/HomeClientWrapper";
 import { MouseSpotlight } from "@/components/MouseSpotlight";
 import { AboutSection } from "@/components/sections/AboutSection";
@@ -14,7 +13,6 @@ export default async function HomePage() {
 	const initialAuthState = { signedIn: Boolean(user), authenticated: Boolean(adminEmail) };
 	return (
 		<div className="min-h-screen bg-background text-foreground">
-			<GridBackground />
 			<MouseSpotlight />
 
 			<HomeClientWrapper initialAuthState={initialAuthState}>

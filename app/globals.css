@@ -255,8 +255,10 @@
   @media (max-width: 640px) { .attachment-card { @apply items-start; } .attachment-card-info { @apply w-full flex-none; } .attachment-card-actions { @apply w-full; } .attachment-card-actions > * { @apply min-w-0 flex-1 justify-center; } }
   .attachment-text-preview { @apply flex max-h-[36rem] overflow-auto bg-background p-4 font-mono text-sm leading-6; }
   .attachment-text-preview pre { @apply m-0 bg-transparent p-0 leading-6; }
-  .attachment-text-line-numbers { @apply sticky left-0 mr-4 min-w-8 select-none text-right text-muted-foreground; }
+  .attachment-text-line-numbers { @apply sticky left-0 mr-4 flex shrink-0 flex-col select-none text-right text-muted-foreground; }
+  .attachment-text-line-numbers span, .attachment-text-line { @apply block min-h-6; }
   .attachment-text-code { @apply min-w-0 flex-1 whitespace-pre; }
+  .attachment-text-truncated { @apply mt-2 text-muted-foreground; }
   .attachment-card-info strong { @apply truncate text-sm font-semibold; }
   .attachment-card-info span { @apply truncate text-xs text-muted-foreground; }
   .attachment-card-actions { @apply flex flex-wrap items-center gap-2; }

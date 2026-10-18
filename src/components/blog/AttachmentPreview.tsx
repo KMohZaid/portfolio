@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, X } from "lucide-react";
 import { TextPreview } from "./TextPreview";
 
 const PdfReader = dynamic(() => import("@embedpdf/react-pdf-viewer").then((module) => module.PDFViewer), { ssr: false });
@@ -58,7 +58,7 @@ export function AttachmentPreview({ file, inline = false }: { file: PreviewFile;
           ? <TextPreview src={file.src} filename={file.name} />
           : <FilePreviewEmbedInline file={previewFile} />}
     </div>}
-    {!inline && <FilePreviewModal files={[previewFile]} currentIndex={0} isOpen={modalOpen} onClose={() => setModalOpen(false)} locale="en-US" theme="dark" shouldFetchAsBlob={() => new URL(file.src, window.location.href).origin !== window.location.origin} onDownload={() => { window.location.assign(file.src); }} />}
+    {!inline && modalOpen && <div className="attachment-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}><section className="attachment-modal" role="dialog" aria-modal="true" aria-label={`Preview ${file.name}`}><header className="attachment-modal-header"><div><strong>{file.name}</strong><span>{[file.mimeType, size].filter(Boolean).join(" · ")}</span></div><button type="button" aria-label="Close preview" className="attachment-button" onClick={() => setModalOpen(false)}><X size={16} /> Close</button></header><div className="attachment-modal-content">{isText ? <TextPreview src={file.src} filename={file.name} /> : <FilePreviewEmbedInline file={previewFile} />}</div></section></div>}
   </section>;
 }
 

@@ -18,6 +18,10 @@ type PostRow = {
   created_at: Date | string;
   updated_at: Date | string;
   published_at: Date | string | null;
+  is_paid?: boolean;
+  paywall_price_paise?: number;
+  paywall_show_excerpt?: boolean;
+  paywall_show_thumbnail?: boolean;
 };
 
 function iso(value: Date | string | null) {
@@ -38,20 +42,30 @@ function serialize(post: PostRow): BlogPost {
     createdAt: iso(post.created_at)!,
     updatedAt: iso(post.updated_at)!,
     publishedAt: iso(post.published_at),
+    isPaid: post.is_paid ?? false,
+    pricePaise: post.paywall_price_paise == null ? undefined : Number(post.paywall_price_paise),
+    showExcerpt: post.paywall_show_excerpt ?? true,
+    showThumbnail: post.paywall_show_thumbnail ?? true,
   };
 }
 
 const columns = "id,title,slug,excerpt,tags,thumbnail,content,status,visibility,created_at,updated_at,published_at";
-const draftColumns = "post_id,title,slug,excerpt,tags,thumbnail,content,updated_at";
+const paidColumns = "coalesce(pw.enabled,false) AS is_paid,pw.price_paise AS paywall_price_paise,coalesce(pw.show_excerpt,false) AS paywall_show_excerpt,coalesce(pw.show_thumbnail,false) AS paywall_show_thumbnail";
+function publicColumns(canSeePaidContent: boolean, includeDrafts = false) {
+  if (includeDrafts) return `blog_posts.${columns.replaceAll(",", ",blog_posts.")},${paidColumns}`;
+  return `blog_posts.id,blog_posts.title,blog_posts.slug,CASE WHEN coalesce(pw.enabled,false) AND NOT ${canSeePaidContent ? "TRUE" : "FALSE"} THEN CASE WHEN coalesce(pw.show_excerpt,false) THEN blog_posts.excerpt ELSE '' END ELSE blog_posts.excerpt END AS excerpt,blog_posts.tags,CASE WHEN coalesce(pw.enabled,false) AND NOT ${canSeePaidContent ? "TRUE" : "FALSE"} AND NOT coalesce(pw.show_thumbnail,false) THEN NULL ELSE blog_posts.thumbnail END AS thumbnail,CASE WHEN coalesce(pw.enabled,false) AND NOT ${canSeePaidContent ? "TRUE" : "FALSE"} THEN '{"type":"doc","content":[]}'::jsonb ELSE blog_posts.content END AS content,blog_posts.status,blog_posts.visibility,blog_posts.created_at,blog_posts.updated_at,blog_posts.published_at,${paidColumns}`;
+}
+const paidJoin = "LEFT JOIN blog_post_paywalls pw ON pw.post_id=blog_posts.id";
 const isSampleId = (id: string) => id.startsWith("sample-");
 
 export async function listPosts(includeDrafts = false, search = "", tag = ""): Promise<BlogPost[]> {
   if (!isDatabaseConfigured()) return samplePosts.filter((post) => (includeDrafts || (post.status === "published" && post.visibility === "public")) && (!tag || post.tags.includes(tag)) && (!search || `${post.title} ${post.excerpt} ${textContent(post.content)}`.toLowerCase().includes(search.toLowerCase())));
-  const clauses = [includeDrafts ? "TRUE" : "status = 'published' AND visibility = 'public'"];
+  const clauses = [includeDrafts ? "TRUE" : "blog_posts.status = 'published' AND blog_posts.visibility = 'public'"];
   const values: unknown[] = [];
-  if (tag) { values.push(tag); clauses.push(`$${values.length} = ANY(tags)`); }
-  if (search) { values.push(search); const parameter = values.length; clauses.push(`(to_tsvector('english', coalesce(title,'') || ' ' || coalesce(excerpt,'') || ' ' || coalesce(content_text,'')) @@ websearch_to_tsquery('english', $${parameter}) OR title ILIKE '%' || $${parameter} || '%')`); }
-  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts WHERE ${clauses.join(" AND ")} ORDER BY published_at DESC NULLS LAST, updated_at DESC`, values);
+  if (tag) { values.push(tag); clauses.push(`$${values.length} = ANY(blog_posts.tags)`); }
+  if (search) { values.push(search); const parameter = values.length; clauses.push(`(to_tsvector('english', coalesce(blog_posts.title,'') || ' ' || coalesce(blog_posts.excerpt,'') || ' ' || coalesce(blog_posts.content_text,'')) @@ websearch_to_tsquery('english', $${parameter}) OR blog_posts.title ILIKE '%' || $${parameter} || '%')`); }
+  const selectColumns = publicColumns(false, includeDrafts);
+  const { rows } = await query<PostRow>(`SELECT ${selectColumns} FROM blog_posts ${paidJoin} WHERE ${clauses.join(" AND ")} ORDER BY blog_posts.published_at DESC NULLS LAST, blog_posts.updated_at DESC`, values);
   return rows.map(serialize);
 }
 
@@ -60,15 +74,19 @@ function textContent(content: BlogPost["content"]): string {
   return visit(content);
 }
 
-export async function getPostBySlug(slug: string, includeDraft = false): Promise<BlogPost | null> {
+export async function getPostBySlug(slug: string, includeDraft = false, canSeePaidContent = false): Promise<BlogPost | null> {
   if (!isDatabaseConfigured()) return samplePosts.find((post) => post.slug === slug && (includeDraft || (post.status === "published" && post.visibility === "public"))) ?? null;
-  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts WHERE slug = $1 ${includeDraft ? "" : "AND status = 'published' AND visibility = 'public'"} LIMIT 1`, [slug]);
+  const selectColumns = publicColumns(canSeePaidContent, includeDraft);
+  const { rows } = await query<PostRow>(`SELECT ${selectColumns} FROM blog_posts ${paidJoin} WHERE blog_posts.slug = $1 ${includeDraft ? "" : "AND blog_posts.status = 'published' AND blog_posts.visibility = 'public'"} LIMIT 1`, [slug]);
   return rows[0] ? serialize(rows[0]) : null;
 }
 
 export async function getPostById(id: string): Promise<BlogPost | null> {
-  if (!isDatabaseConfigured() || !/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const { rows } = await query<PostRow>(`SELECT ${columns} FROM blog_posts WHERE id = $1`, [id]);
+  if (!isDatabaseConfigured()) return null;
+  const sample = samplePosts.find((post) => post._id === id);
+  if (sample) return sample;
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const { rows } = await query<PostRow>(`SELECT blog_posts.${columns.replaceAll(",", ",blog_posts.")},coalesce(pw.enabled,false) AS is_paid,pw.price_paise AS paywall_price_paise,coalesce(pw.show_excerpt,false) AS paywall_show_excerpt,coalesce(pw.show_thumbnail,false) AS paywall_show_thumbnail FROM blog_posts LEFT JOIN blog_post_paywalls pw ON pw.post_id=blog_posts.id WHERE blog_posts.id = $1`, [id]);
   return rows[0] ? serialize(rows[0]) : null;
 }
 
@@ -99,7 +117,7 @@ export async function promoteWorkingDraft(id: string, input: PostInput & Pick<Bl
 }
 
 export async function getPostDraft(id: string) {
-  const { rows } = await query<{ post_id: string; title: string; slug: string; excerpt: string; tags: string[]; thumbnail: string | null; content: BlogPost["content"]; updated_at: Date | string }>(`SELECT ${draftColumns} FROM blog_post_drafts WHERE post_id=$1`, [id]);
+  const { rows } = await query<{ post_id: string; title: string; slug: string; excerpt: string; tags: string[]; thumbnail: string | null; content: BlogPost["content"]; updated_at: Date | string }>(`SELECT post_id,title,slug,excerpt,tags,thumbnail,content,updated_at FROM blog_post_drafts WHERE post_id=$1`, [id]);
   return rows[0] ? { ...rows[0], updatedAt: iso(rows[0].updated_at) } : null;
 }
 

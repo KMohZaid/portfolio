@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, BookOpen, Github, LogOut, ShieldCheck } from "lucide-react";
 import { getProviderAccounts, getSignedInUser, getAdminEmail } from "@/lib/blog/auth";
 import { AccountConnections } from "@/components/blog/AccountConnections";
+import { AccountPurchases } from "@/components/blog/AccountPurchases";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const errorCode = Array.isArray(authError) ? authError[0] : authError;
   const accountError = errorCode === "email_does_not_match" ? "Could not link account: the provider email does not match your account email. Sign in to the provider with the same verified email address." : errorCode ? "Could not link this account. Please check the provider account and try again." : undefined;
 
-  return <main className="min-h-screen bg-background px-6 pb-20 pt-10 text-foreground">
+  return <main className="min-h-screen bg-transparent px-6 pb-20 pt-10 text-foreground">
     <div className="mx-auto max-w-3xl">
       <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><ArrowLeft size={16} /> Blog</Link>
       <div className="mt-10 rounded-2xl border border-border bg-card p-7">
@@ -28,7 +29,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <AccountConnections accounts={accounts} providers={{ google: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET), github: Boolean(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) }} initialError={accountError} />
         <section className="mt-8 border-t border-border pt-6">
           <h2 className="font-mono text-lg font-semibold">Purchases &amp; access</h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">A place for future paid article access and purchases. No payments or paid access are enabled yet.</p>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">Your paid article purchases and access details.</p>
+          <AccountPurchases />
         </section>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           <Link href="/blog" className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm hover:border-primary"><BookOpen size={16} /> Browse articles</Link>

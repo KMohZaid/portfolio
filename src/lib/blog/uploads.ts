@@ -35,7 +35,7 @@ export async function getUploadById(id: string, includeRemoved = false): Promise
 export async function addUpload(upload: { filename: string; size: number; createdAt: string; telegramFileId: string; telegramFileUniqueId: string; mimeType: string }) {
   const id = randomUUID();
   const url = `/api/files/${id}`;
-  const { rows } = await query<UploadRow>("INSERT INTO blog_uploads(id,url,filename,size,created_at,telegram_file_id,telegram_file_unique_id,mime_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,url,filename,size,created_at,removed_at,telegram_file_id,telegram_file_unique_id,mime_type", [id, url, upload.filename, upload.size, upload.createdAt, upload.telegramFileId, upload.telegramFileUniqueId, upload.mimeType]);
+  const { rows } = await query<UploadRow>("INSERT INTO blog_uploads(id,url,filename,size,created_at,telegram_file_id,telegram_file_unique_id,mime_type) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (telegram_file_unique_id) WHERE telegram_file_unique_id IS NOT NULL DO UPDATE SET telegram_file_id=EXCLUDED.telegram_file_id, filename=EXCLUDED.filename, size=EXCLUDED.size, mime_type=EXCLUDED.mime_type, removed_at=NULL RETURNING id,url,filename,size,created_at,removed_at,telegram_file_id,telegram_file_unique_id,mime_type", [id, url, upload.filename, upload.size, upload.createdAt, upload.telegramFileId, upload.telegramFileUniqueId, upload.mimeType]);
   return serialize(rows[0]);
 }
 

@@ -17,7 +17,7 @@ export const MouseSpotlight = () => {
 
 	return (
 		<motion.div
-			className="pointer-events-none fixed inset-0 z-0"
+			className="pointer-events-none fixed inset-0 z-0" aria-hidden="true"
 			animate={{
 				background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, hsl(280 75% 65% / 0.18), hsl(340 70% 55% / 0.1) 40%, transparent 60%)`,
 			}}

@@ -48,7 +48,7 @@ function LoginForm() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-6 text-foreground">
+    <main className="min-h-screen bg-transparent px-6 text-foreground">
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center">
         <Link href="/" className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><ArrowLeft size={16} /> Portfolio</Link>
         <div className="rounded-2xl border border-border bg-card p-7">

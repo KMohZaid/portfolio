@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ExternalLink, FilePlus2, Pencil, UserRound } from "lucide-react";
+import { ArrowLeft, ExternalLink, FilePlus2, LockKeyhole, Pencil, UserRound } from "lucide-react";
 import { getAdminEmail } from "@/lib/blog/auth";
 import { listPosts } from "@/lib/blog/posts";
 import { UploadManager } from "@/components/blog/UploadManager";
+import { PaywallDialogButton } from "@/components/blog/PaywallDialogButton";
+import { AdminPaywallRefresh } from "@/components/blog/AdminPaywallRefresh";
 import { DeletePostButton } from "./DeletePostButton";
 import { VisibilityToggle } from "./VisibilityToggle";
 
@@ -18,7 +20,8 @@ export default async function AdminPage() {
   try { posts = await listPosts(true); } catch (e) { error = e instanceof Error ? e.message : "Unable to load posts."; }
 
   return (
-    <main className="min-h-screen bg-background px-6 pb-20 pt-10 text-foreground">
+    <main className="min-h-screen bg-transparent px-6 pb-20 pt-10 text-foreground">
+      <AdminPaywallRefresh />
       <div className="mx-auto max-w-5xl">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary"><ArrowLeft size={16} /> Portfolio</Link>
         <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
@@ -43,7 +46,7 @@ export default async function AdminPage() {
                   {post.thumbnail && <img src={post.thumbnail} alt="" className="aspect-[16/7] w-full bg-muted object-cover" />}
                   <div className="p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1"><p className="mb-1 break-all font-mono text-xs text-muted-foreground">/blog/{post.slug}</p><h3 className="font-mono text-lg font-semibold text-primary">{post.title}</h3>
+                      <div className="min-w-0 flex-1"><p className="mb-1 break-all font-mono text-xs text-muted-foreground">/blog/{post.slug}</p><h3 className="flex items-center gap-2 font-mono text-lg font-semibold text-primary">{post.title}{post.isPaid && <span title={`Paid · ₹${((post.pricePaise ?? 0) / 100).toFixed(2)}`} aria-label={`Paid article, ₹${((post.pricePaise ?? 0) / 100).toFixed(2)}`} className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-600 dark:text-emerald-400"><LockKeyhole size={13} />₹{((post.pricePaise ?? 0) / 100).toFixed(2)}</span>}</h3>
                       <div className="mt-2 flex flex-wrap items-center gap-2">{post.status === "draft" ? <span className="rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">draft</span> : post.visibility === "hidden" ? <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-xs text-red-400">hidden</span> : <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-600 dark:text-emerald-400">published</span>}</div></div>
                     </div>
                     <p className="mt-2 text-xs text-muted-foreground">{post.status === "published" && post.publishedAt ? `Published ${new Date(post.publishedAt).toLocaleDateString()} · ` : ""}Updated {new Date(post.updatedAt).toLocaleDateString()}</p>
@@ -51,6 +54,7 @@ export default async function AdminPage() {
                     <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-3">
                       {post.status === "published" && post.visibility === "public" && <Link href={`/blog/${post.slug}`} aria-label="View post" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"><ExternalLink size={16} /> View</Link>}
                       <Link href={`/admin/edit/${post._id}`} aria-label="Edit post" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary"><Pencil size={16} /> Edit</Link>
+                      <PaywallDialogButton postId={post._id!} />
                       {post.status === "published" && <VisibilityToggle id={post._id!} visibility={post.visibility} />}
                       <DeletePostButton id={post._id!} />
                     </div>

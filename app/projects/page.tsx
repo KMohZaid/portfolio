@@ -1,13 +1,11 @@
 import { ArrowLeft, FolderGit2 } from "lucide-react";
 import Link from "next/link";
-import { GridBackground } from "@/components/GridBackground";
 import { Header } from "@/components/Header";
 import { MouseSpotlight } from "@/components/MouseSpotlight";
 
 export default function ProjectsPage() {
 	return (
-		<div className="min-h-screen bg-background text-foreground">
-			<GridBackground />
+		<div className="min-h-screen bg-transparent text-foreground">
 			<MouseSpotlight />
 			<Header />
 			<div className="relative z-10 flex items-center justify-center min-h-screen px-6">
