@@ -14,8 +14,8 @@ export const defaultPaywall: PaywallSettings = {
   enabled: false,
   pricePaise: 0,
   accessDurationSeconds: null,
-  showExcerpt: false,
-  showThumbnail: false,
+  showExcerpt: true,
+  showThumbnail: true,
 };
 
 export async function getPaywall(postId: string): Promise<PaywallSettings> {
