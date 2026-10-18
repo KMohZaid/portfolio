@@ -110,6 +110,9 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      react-razorpay:
+        specifier: ^3.0.1
+        version: 3.0.1(react@18.3.1)
       sonner:
         specifier: ^1.7.4
         version: 1.7.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3425,6 +3428,11 @@ packages:
       '@types/react': '>=18'
       react: '>=18'
 
+  react-razorpay@3.0.1:
+    resolution: {integrity: sha512-43P6VB20quinlUDN3dUdg0XlMtoClzfvhgpPWnGrLwLE6Pr570fXdA4kC+92Wqof48A/x96TXRpLnrQ/J1eXyw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   react-remove-scroll-bar@2.3.8:
     resolution: {integrity: sha512-9r+yi9+mgU33AKcj6IbT9oRCO78WriSj6t/cF8DWBZJ9aOGPOTEDvdUDz1FwKim7QXWwmHqtdHnRJfhAxEG46Q==}
     engines: {node: '>=10'}
@@ -6148,7 +6156,7 @@ snapshots:
 
   esrap@2.4.0(@typescript-eslint/types@8.56.1):
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
     optionalDependencies:
       '@typescript-eslint/types': 8.56.1
 
@@ -6628,7 +6636,7 @@ snapshots:
 
   is-reference@3.0.3:
     dependencies:
-      '@types/estree': 1.0.8
+      '@types/estree': 1.0.9
 
   is-regex@1.2.1:
     dependencies:
@@ -6805,7 +6813,7 @@ snapshots:
 
   magic-string@0.30.21:
     dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
+      '@jridgewell/sourcemap-codec': 1.6.0
 
   mammoth@1.13.0:
     dependencies:
@@ -7614,6 +7622,10 @@ snapshots:
       vfile: 6.0.3
     transitivePeerDependencies:
       - supports-color
+
+  react-razorpay@3.0.1(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   react-remove-scroll-bar@2.3.8(@types/react@18.3.28)(react@18.3.1):
     dependencies:
