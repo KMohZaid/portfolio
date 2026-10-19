@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/blog/auth";
-import { addUpload, listUploads, markUploadRemoved, MAX_UPLOAD_BYTES } from "@/lib/blog/uploads";
-import { query } from "@/lib/blog/db";
+import { withTransaction } from "@/lib/blog/db";
+import { acquireUploadReferenceLock, addUpload, findReferencedUploads, listUploads, markUploadRemoved, MAX_UPLOAD_BYTES } from "@/lib/blog/uploads";
 
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
   try {
     await requireAdmin();
-    const uploads = await listUploads();
-    const { rows } = await query<{ title: string; content: string; thumbnail: string | null }>("SELECT title, content::text AS content, thumbnail FROM blog_posts UNION ALL SELECT posts.title, drafts.content::text AS content, drafts.thumbnail FROM blog_post_drafts drafts JOIN blog_posts posts ON posts.id=drafts.post_id");
-    const references = new Map<string, string[]>();
-    for (const upload of uploads) for (const row of rows) if (row.content.includes(upload.url) || row.thumbnail === upload.url) references.set(upload.url, [...(references.get(upload.url) ?? []), row.title]);
+    const { uploads, references } = await withTransaction(async (client) => {
+      await acquireUploadReferenceLock(client);
+      return { uploads: await listUploads(client), references: await findReferencedUploads(client) };
+    });
+    const referencesById = new Map(references.map((reference) => [reference.uploadId, reference.usedIn]));
     const all = new URL(request.url).searchParams.get("all") === "1";
-    const annotated = uploads.map((upload) => ({ ...upload, usedIn: references.get(upload.url) ?? [] }));
+    const annotated = uploads.map((upload) => ({ ...upload, usedIn: referencesById.get(upload._id ?? "") ?? [] }));
     return NextResponse.json({ uploads: all ? annotated : annotated.filter((upload) => upload.usedIn.length === 0), maxBytes: MAX_UPLOAD_BYTES, cleanup: "Unlisting removes public access through this proxy; it does not delete the Telegram message." });
   } catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to load uploads." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
 }
@@ -66,6 +67,15 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  try { await requireAdmin(); const { id } = await request.json(); return await markUploadRemoved(String(id)) ? NextResponse.json({ ok: true, note: "Removed from public proxy access. The Telegram message remains stored." }) : NextResponse.json({ error: "Indexed upload not found" }, { status: 404 }); }
-  catch (error) { return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to update the upload index." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 }); }
+  try {
+    await requireAdmin();
+    const body = await request.json();
+    if (typeof body?.id !== "string" || !/^[0-9a-f-]{36}$/i.test(body.id)) return NextResponse.json({ error: "Invalid upload ID." }, { status: 400 });
+    const result = await markUploadRemoved(body.id);
+    if (result.removed) return NextResponse.json({ ok: true, note: "Removed from public proxy access. The Telegram message remains stored." });
+    if (result.references.length) return NextResponse.json({ error: "This upload is used by saved articles or drafts. Remove it from all content and thumbnails before unlisting.", usedIn: result.references }, { status: 409 });
+    return NextResponse.json({ error: "Indexed upload not found" }, { status: 404 });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error && error.message === "Unauthorized" ? "Unauthorized" : "Unable to update the upload index." }, { status: error instanceof Error && error.message === "Unauthorized" ? 401 : 503 });
+  }
 }

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, FilePlus2, LockKeyhole, Pencil, UserRound } from "lucide-react";
 import { getAdminEmail } from "@/lib/blog/auth";
-import { listPosts } from "@/lib/blog/posts";
+import { AdminSalesAnalytics } from "@/components/blog/AdminSalesAnalytics";
+import { listAdminPostSummaries } from "@/lib/blog/posts";
 import { UploadManager } from "@/components/blog/UploadManager";
 import { PaywallDialogButton } from "@/components/blog/PaywallDialogButton";
 import { AdminPaywallRefresh } from "@/components/blog/AdminPaywallRefresh";
@@ -11,13 +12,13 @@ import { VisibilityToggle } from "./VisibilityToggle";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
-  const email = await getAdminEmail();
+export default async function AdminPage({ searchParams }: { searchParams: Promise<{ period?: string }> }) {
+  const [{ period }, email] = await Promise.all([searchParams, getAdminEmail()]);
   if (!email) redirect("/login?returnTo=%2Fadmin");
 
   let posts = [];
   let error = "";
-  try { posts = await listPosts(true); } catch (e) { error = e instanceof Error ? e.message : "Unable to load posts."; }
+  try { posts = await listAdminPostSummaries(); } catch (e) { error = e instanceof Error ? e.message : "Unable to load posts."; }
 
   return (
     <main className="min-h-screen bg-transparent px-6 pb-20 pt-10 text-foreground">
@@ -37,6 +38,7 @@ export default async function AdminPage() {
           </div>
         </div>
         <form action="/api/auth/logout" method="post" className="mt-4"><button className="text-sm text-muted-foreground hover:text-foreground">Sign out</button></form>
+        <AdminSalesAnalytics period={period} />
         <section className="mt-10 overflow-hidden rounded-xl border border-border bg-card">
           <div className="border-b border-border px-5 py-4"><h2 className="font-mono text-lg font-semibold">Posts <span className="text-sm text-muted-foreground">({posts.length})</span></h2></div>
           {error ? <p className="p-5 text-sm text-destructive">{error}</p> : posts.length === 0 ? <div className="p-8 text-center text-sm text-muted-foreground">No posts yet. Create a draft or publish your first post.</div> : (

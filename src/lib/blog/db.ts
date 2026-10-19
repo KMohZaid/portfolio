@@ -1,6 +1,8 @@
 import "server-only";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
+export type { PoolClient } from "pg";
+
 let pool: Pool | undefined;
 
 export function getPool() {
@@ -13,6 +15,7 @@ export function getPool() {
 export async function query<T extends QueryResultRow = QueryResultRow>(text: string, values: unknown[] = []) {
   return getPool().query<T>(text, values);
 }
+
 
 export async function withTransaction<T>(operation: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await getPool().connect();
